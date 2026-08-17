@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>轨道交通综合开发新闻报道监测</title>
+    <style>
+        :root {
+            --blue: #1a56db; --blue-dark: #1e40af; --blue-light: #dbeafe; --red: #dc2626; --red-light: #fef2f2; --green: #16a34a; --green-light: #f0fdf4; --orange: #ea580c; --orange-light: #fff7ed; --purple: #7c3aed;
+            --ink: #1e293b; --muted: #64748b; --bg: #f1f5f9; --card: #ffffff; --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06); --shadow: 0 4px 6px rgba(0,0,0,0.05); --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+            --radius: 16px; --radius-sm: 10px; --table-stripe: #f8fafc; --table-hover: #eff6ff; --summary-bg: #f8fafc; --chart-track: #f1f5f9;
+        }
+        [data-theme="dark"] {
+            --blue: #3b82f6; --blue-dark: #60a5fa; --blue-light: #1e3a5f; --red: #ef4444; --red-light: #3b1a1a; --green: #22c55e; --green-light: #1a3b1a; --orange: #f97316; --orange-light: #3b2a1a; --purple: #8b5cf6;
+            --ink: #e2e8f0; --muted: #94a3b8; --bg: #0f172a; --card: #1e293b; --border: #334155;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow: 0 4px 6px rgba(0,0,0,0.3); --shadow-lg: 0 10px 25px rgba(0,0,0,0.4);
+            --table-stripe: #1a2535; --table-hover: #243044; --summary-bg: #1a2535; --chart-track: #1e293b;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--ink); line-height:1.6; transition:background 0.3s, color 0.3s; }
+        .hero { background: linear-gradient(135deg, #1e3a5f 0%, #1a56db 50%, #3b82f6 100%); color:#fff; padding:56px 32px 48px; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:-50%; right:-10%; width:500px; height:500px; background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%); border-radius:50%; }
+        .hero::after { content:''; position:absolute; bottom:-30%; left:-5%; width:400px; height:400px; background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%); border-radius:50%; }
+        .hero .inner { max-width:1360px; margin:0 auto; position:relative; z-index:1; }
+        .hero h1 { font-size:30px; font-weight:800; margin-bottom:14px; letter-spacing:1px; }
+        .hero .code { display:inline-block; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 18px; font-size:13px; margin-bottom:16px; backdrop-filter:blur(10px); letter-spacing:0.5px; }
+        .hero p { font-size:14.5px; opacity:0.88; max-width:900px; line-height:1.8; }
+        .meta-bar { background:var(--card); border-bottom:1px solid var(--border); padding:16px 32px; box-shadow:var(--shadow-sm); transition:background 0.3s, border-color 0.3s; }
+        .meta-bar .inner { max-width:1360px; margin:0 auto; font-size:13.5px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+        .meta-bar .line b { color:var(--ink); font-weight:600; }
+        .stats { max-width:1360px; margin:28px auto 0; padding:0 32px; display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:14px; }
+        .stat { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px; text-align:center; box-shadow:var(--shadow-sm); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .stat:hover { transform:translateY(-3px); box-shadow:var(--shadow-lg); }
+        .stat .n { font-size:28px; font-weight:800; color:var(--blue); line-height:1.2; }
+        .stat .l { font-size:11.5px; color:var(--muted); margin-top:4px; font-weight:500; letter-spacing:0.3px; }
+        .stat.scope-world .n { color:#1a56db; } .stat.scope-national .n { color:#dc2626; } .stat.scope-gd .n { color:#16a34a; } .stat.scope-gz .n { color:#ea580c; }
+        [data-theme="dark"] .stat.scope-world .n { color:#3b82f6; } [data-theme="dark"] .stat.scope-national .n { color:#ef4444; } [data-theme="dark"] .stat.scope-gd .n { color:#22c55e; } [data-theme="dark"] .stat.scope-gz .n { color:#f97316; }
+        .chart-section { max-width:1360px; margin:28px auto 0; padding:0 32px; }
+        .chart-title { font-size:19px; font-weight:700; color:var(--ink); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .chart-panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:22px 26px; box-shadow:var(--shadow); transition:background 0.3s, border-color 0.3s; }
+        .chart-panel h3 { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:18px; }
+        .chart-bar-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; font-size:12.5px; }
+        .chart-bar-label { width:115px; flex:none; color:var(--ink); font-size:12px; font-weight:500; }
+        .chart-bar-track { flex:1; background:var(--chart-track); border-radius:8px; height:18px; overflow:hidden; }
+        .chart-bar-fill { height:100%; border-radius:8px; transition:width 0.8s cubic-bezier(0.4, 0, 0.2, 1); position:relative; }
+        .chart-bar-fill::after { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%); border-radius:8px; }
+        .chart-bar-n { width:30px; text-align:right; font-weight:600; color:var(--muted); font-size:12px; }
+        @media(max-width:900px) { .chart-grid { grid-template-columns:1fr; } }
+        .quarterly-section { max-width:1360px; margin:28px auto 0; padding:0 32px; }
+        .quarterly-title { font-size:19px; font-weight:700; color:var(--ink); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        .quarterly-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; }
+        .quarter-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-direction:column; }
+        .quarter-card:hover { box-shadow:var(--shadow-lg); transform:translateY(-4px); }
+        .quarter-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .quarter-label { font-weight:700; font-size:15px; color:var(--ink); }
+        .quarter-count { background: linear-gradient(135deg, #1a56db, #3b82f6); color:#fff; border-radius:20px; padding:5px 15px; font-size:12px; font-weight:600; box-shadow:0 2px 6px rgba(26,86,219,0.3); }
+        .quarter-detail { font-size:11.5px; color:var(--muted); margin-bottom:8px; line-height:1.5; }
+        .quarter-summary { font-size:12.5px; color:var(--ink); line-height:1.75; padding:12px 14px; background:var(--summary-bg); border-radius:10px; border-left:4px solid var(--blue); flex:1; transition:background 0.3s; }
+        @media(max-width:1200px) { .quarterly-grid { grid-template-columns:repeat(2, 1fr); } }
+        @media(max-width:640px) { .quarterly-grid { grid-template-columns:1fr; } }
+        .toolbar { max-width:1360px; margin:26px auto 14px; padding:0 32px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+        .toolbar input, .toolbar select { padding:11px 16px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13.5px; background:var(--card); color:var(--ink); box-shadow:var(--shadow-sm); transition:all 0.2s; }
+        .toolbar input:focus, .toolbar select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(26,86,219,0.1); }
+        .toolbar input { flex:1; min-width:180px; }
+        .table-wrap { max-width:1360px; margin:0 auto 44px; padding:0 32px; }
+        table { width:100%; border-collapse:collapse; background:var(--card); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); font-size:13px; transition:background 0.3s; }
+        th { background: linear-gradient(135deg, #1e3a5f, #1a56db); color:#fff; padding:13px 12px; text-align:left; font-weight:600; white-space:nowrap; position:sticky; top:0; font-size:12px; letter-spacing:0.5px; }
+        td { padding:11px 12px; border-top:1px solid var(--border); vertical-align:middle; }
+        tbody tr { transition:background 0.2s; }
+        tbody tr:nth-child(even) { background:var(--table-stripe); }
+        tbody tr:hover { background:var(--table-hover); }
+        .num { text-align:center; color:var(--muted); width:40px; font-size:12px; font-weight:500; }
+        .date { white-space:nowrap; width:95px; font-size:12px; color:var(--ink); }
+        .scope-col { width:80px; text-align:center; }
+        .ttl { font-weight:600; min-width:200px; font-size:13px; }
+        .ttl a { color:#1a56db; text-decoration:none; transition:color 0.2s; }
+        .ttl a:hover { color:#1e40af; text-decoration:underline; }
+        .media { min-width:130px; font-size:12px; color:var(--muted); }
+        .content { min-width:240px; font-size:12px; color:#475569; line-height:1.55; }
+        [data-theme="dark"] .content { color:#cbd5e1; }
+        .tag { display:inline-block; padding:3px 10px; border-radius:16px; font-size:10.5px; white-space:nowrap; margin:1px 0; font-weight:500; width:fit-content; letter-spacing:0.3px; }
+        .scope-badge { display:inline-block; padding:5px 14px; border-radius:16px; font-size:11.5px; font-weight:600; letter-spacing:0.5px; }
+        .scope-world { background:#dbeafe; color:#1e40af; } .scope-national { background:#fee2e2; color:#b91c1c; } .scope-guangdong { background:#dcfce7; color:#15803d; } .scope-guangzhou { background:#ffedd5; color:#c2410c; }
+        [data-theme="dark"] .scope-world { background:#1e3a5f; color:#93c5fd; } [data-theme="dark"] .scope-national { background:#3b1a1a; color:#fca5a5; } [data-theme="dark"] .scope-guangdong { background:#1a3b1a; color:#86efac; } [data-theme="dark"] .scope-guangzhou { background:#3b2a1a; color:#fdba74; }
+        .kw-railway { background:#ede9fe; color:#6d28d9; } .kw-intercity { background:#cffafe; color:#0e7490; } .kw-metro { background:#fce7f3; color:#be185d; } .kw-track { background:#f3e8ff; color:#7c3aed; } .kw-hub { background:#fef3c7; color:#b45309; } .kw-dev { background:#dcfce7; color:#15803d; } .kw-finance { background:#ffe4e6; color:#be123c; } .kw-sustain { background:#e0f2fe; color:#0369a1; }
+        a { color:#1a56db; text-decoration:none; } a:hover { color:#1e40af; text-decoration:underline; }
+        [data-theme="dark"] .ttl a { color:#60a5fa; } [data-theme="dark"] .ttl a:hover { color:#93c5fd; } [data-theme="dark"] a { color:#60a5fa; } [data-theme="dark"] a:hover { color:#93c5fd; }
+        footer { text-align:center; color:var(--muted); font-size:13px; padding:28px 32px 48px; border-top:1px solid var(--border); margin-top:20px; transition:border-color 0.3s; }
+        .scroll-box { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        .count-tip { font-size:13px; color:var(--muted); font-weight:500; }
+        .kw-cell { display:flex; flex-wrap:wrap; gap:3px 5px; align-items:flex-start; min-width:75px; line-height:1.5; }
+        .back-to-top { position:fixed; bottom:32px; right:32px; width:48px; height:48px; border-radius:50%; background:var(--blue); color:#fff; border:none; cursor:pointer; font-size:20px; box-shadow:0 4px 15px rgba(26,86,219,0.4); opacity:0; visibility:hidden; transform:translateY(20px); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .back-to-top.show { opacity:1; visibility:visible; transform:translateY(0); }
+        .back-to-top:hover { background:var(--blue-dark); transform:translateY(-3px); box-shadow:0 6px 20px rgba(26,86,219,0.5); }
+        .theme-toggle { position:fixed; bottom:32px; right:96px; width:48px; height:48px; border-radius:50%; background:var(--card); color:var(--ink); border:2px solid var(--border); cursor:pointer; font-size:20px; box-shadow:var(--shadow); transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .theme-toggle:hover { transform:scale(1.1); box-shadow:var(--shadow-lg); }
+        @media(max-width:640px) { .back-to-top { bottom:20px; right:20px; width:42px; height:42px; font-size:18px; } .theme-toggle { bottom:20px; right:76px; width:42px; height:42px; font-size:18px; } }
+        .loading { text-align:center; padding:40px; color:var(--muted); font-size:16px; }
+        .error-msg { background:#fef2f2; color:#b91c1c; padding:20px; border-radius:8px; text-align:center; border:1px solid #fecaca; }
+        .empty-msg { text-align:center; padding:40px; color:var(--muted); font-size:16px; }
+    </style>
+</head>
+<body>
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+<div class="hero"><div class="inner"><h1>轨道交通综合开发新闻报道监测</h1><span class="code">国铁 · 城际 · 地铁 · 轨道 · 综合交通枢纽 · 综合开发 · 投融资 · 可持续经营运营</span><p>本页数据每周一自动更新</p></div></div>
+<div class="meta-bar"><div class="inner"><div class="line"><b>监测范围：</b>世界 · 中国 · 广东省 · 广州市 四级轨道交通综合开发</div><div class="line lead"><b>关键领域：</b>国铁综合开发 · 城际轨道投融资 · 地铁TOD · 轨道可持续经营 · 综合交通枢纽站城融合 · 场站综合体综合开发</div><div class="line"><b>最近更新：</b> <span id="lastUpdate">加载中...</span> · <b>收录报道：</b><span id="totalCount">0</span> 条</div></div></div>
+<div class="stats" id="statsContainer"></div>
+<div class="chart-section"><div class="chart-title">📊 数据图表总结</div><div class="chart-grid"><div class="chart-panel" id="mediaChart"><h3>📰 媒体来源分布</h3></div><div class="chart-panel" id="keywordChart"><h3>🏷️ 关键词热度统计</h3></div></div></div>
+<div class="quarterly-section"><div class="quarterly-title">📝 季度新闻总结</div><div class="quarterly-grid" id="quarterlyGrid"></div></div>
+<div class="toolbar"><input type="text" placeholder="🔍 搜索标题、媒体、关键词..." id="searchInput" onkeyup="filterTable()"/><select id="scopeFilter" onchange="filterTable()"><option value="all">全部范围</option><option value="世界">🌐 世界</option><option value="全国">🇨🇳 全国</option><option value="广东省">📗 广东省</option><option value="广州市">📙 广州市</option></select><select id="keywordFilter" onchange="filterTable()"><option value="all">全部关键词</option><option value="国铁">国铁</option><option value="城际">城际</option><option value="地铁">地铁</option><option value="轨道">轨道</option><option value="综合交通枢纽">综合交通枢纽</option><option value="综合开发">综合开发</option><option value="投融资">投融资</option><option value="可持续经营运营">可持续经营运营</option></select><span class="count-tip" id="countTip">共 0 条</span></div>
+<div class="table-wrap"><div class="scroll-box"><table><thead><tr><th class="num">#</th><th>日期</th><th class="scope-col">范围</th><th>标题</th><th>媒体/来源</th><th>关键词</th><th>摘要</th></tr></thead><tbody id="newsTable"><tr><td colspan="7" class="loading">正在加载新闻数据，请稍候...</td></tr></tbody></table></div></div>
+<footer><p>轨道交通综合开发新闻报道监测 · 数据每周一自动同步</p></footer>
+<script>
+// ============================================================
+// 您的新闻数据在这里！每周一修改下面这个数组即可更新网站
+// 格式：{ "日期": "2026-08-16", "标题": "...", "链接": "...", "来源": "...", "类型": "...", "摘要": "..." }
+// ============================================================
+const newsData = [
+    // 示例新闻（请替换成您自己的真实新闻）
+    { "日期": "2026-08-16", "标题": "示例：新线路TOD综合体规划公示", "链接": "https://example.com/news/1", "来源": "广州日报", "类型": "规划公示/获批", "摘要": "该项目位于番禺区，总建面约20万㎡。" },
+    { "日期": "2026-08-09", "标题": "示例：某TOD项目商业部分封顶", "链接": "https://example.com/news/2", "来源": "南方都市报", "类型": "项目建设进展", "摘要": "商业体量约5万㎡，预计明年开业。" },
+    // ===== 在下面添加更多新闻，按此格式复制粘贴即可 =====
+    // { "日期": "2026-08-01", "标题": "您的新闻标题", "链接": "https://...", "来源": "媒体名称", "类型": "类型", "摘要": "摘要内容" },
+];
+
+// ============================================================
+// 以下代码负责渲染页面，您不需要修改
+// ============================================================
+function renderNews(data) {
+    const tbody = document.getElementById('newsTable');
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">📭 暂无新闻数据，请添加新闻</td></tr>';
+        return;
+    }
+    tbody.innerHTML = '';
+    data.forEach((item, index) => {
+        // 自动判断范围
+        let scope = '全国';
+        const text = (item.摘要 || '') + (item.标题 || '');
+        if (text.includes('世界') || text.includes('国际')) scope = '世界';
+        else if (text.includes('广东省') || text.includes('广东')) scope = '广东省';
+        else if (text.includes('广州')) scope = '广州市';
+        const scopeClass = scope === '世界' ? 'scope-world' : scope === '广东省' ? 'scope-guangdong' : scope === '广州市' ? 'scope-guangzhou' : 'scope-national';
+        // 自动提取关键词
+        const kwMap = { '国铁': ['高铁','铁路','国铁'], '城际': ['城际'], '地铁': ['地铁'], '轨道': ['轨道'], '综合交通枢纽': ['枢纽'], '综合开发': ['TOD','开发','综合开发'], '投融资': ['融资','投资','投融资'], '可持续经营运营': ['可持续','经营','运营'] };
+        let keywords = [];
+        for (const [kw, words] of Object.entries(kwMap)) {
+            for (const w of words) {
+                if (text.includes(w)) { keywords.push(kw); break; }
+            }
+        }
+        if (keywords.length === 0) keywords.push('轨道');
+        const kwHtml = keywords.map(k => `<span class="tag kw-${k}">${k}</span>`).join(' ');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="num">${index + 1}</td>
+            <td class="date">${item.日期 || ''}</td>
+            <td class="scope-col"><span class="scope-badge ${scopeClass}">${scope}</span></td>
+            <td class="ttl"><a href="${item.链接 || '#'}" target="_blank">${item.标题 || ''}</a></td>
+            <td class="media">${item.来源 || ''}</td>
+            <td class="kw-cell">${kwHtml}</td>
+            <td class="content">${item.摘要 || ''}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+    document.getElementById('totalCount').textContent = data.length;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleDateString('zh-CN');
+}
+
+function generateStats(data) {
+    const container = document.getElementById('statsContainer');
+    if (!data || data.length === 0) { container.innerHTML = ''; return; }
+    const typeCount = {};
+    const scopeCount = { '世界':0, '全国':0, '广东省':0, '广州市':0 };
+    data.forEach(item => {
+        const type = item.类型 || '';
+        if (type) typeCount[type] = (typeCount[type] || 0) + 1;
+        const text = (item.摘要 || '') + (item.标题 || '');
+        let scope = '全国';
+        if (text.includes('世界') || text.includes('国际')) scope = '世界';
+        else if (text.includes('广东省') || text.includes('广东')) scope = '广东省';
+        else if (text.includes('广州')) scope = '广州市';
+        scopeCount[scope] = (scopeCount[scope] || 0) + 1;
+    });
+    const total = data.length;
+    container.innerHTML = `
+        <div class="stat"><div class="n">${total}</div><div class="l">收录报道总数</div></div>
+        <div class="stat"><div class="n">${typeCount['项目建设进展'] || 0}</div><div class="l">项目建设进展</div></div>
+        <div class="stat"><div class="n">${typeCount['规划公示/获批'] || 0}</div><div class="l">规划公示/获批</div></div>
+        <div class="stat"><div class="n">${typeCount['政策/行业观点'] || 0}</div><div class="l">政策/行业观点</div></div>
+        <div class="stat"><div class="n">${typeCount['商业配套/招商'] || 0}</div><div class="l">商业配套/招商</div></div>
+        <div class="stat"><div class="n">${typeCount['综合'] || 0}</div><div class="l">综合</div></div>
+        <div class="stat"><div class="n">${typeCount['政务网站发布'] || 0}</div><div class="l">政务网站发布</div></div>
+        <div class="stat"><div class="n">${typeCount['中央/地方媒体报道'] || 0}</div><div class="l">中央/地方媒体报道</div></div>
+        <div class="stat scope-world"><div class="n">${scopeCount['世界']}</div><div class="l">🌐 世界范围</div></div>
+        <div class="stat scope-national"><div class="n">${scopeCount['全国']}</div><div class="l">🇨🇳 全国范围</div></div>
+        <div class="stat scope-gd"><div class="n">${scopeCount['广东省']}</div><div class="l">📗 广东省范围</div></div>
+        <div class="stat scope-gz"><div class="n">${scopeCount['广州市']}</div><div class="l">📙 广州市范围</div></div>
+    `;
+}
+
+function generateCharts(data) {
+    if (!data || data.length === 0) return;
+    const mediaMap = {};
+    data.forEach(item => { const m = item.来源 || '未知'; mediaMap[m] = (mediaMap[m] || 0) + 1; });
+    const sortedMedia = Object.entries(mediaMap).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const maxMedia = sortedMedia.length > 0 ? sortedMedia[0][1] : 1;
+    const mediaChart = document.getElementById('mediaChart');
+    mediaChart.innerHTML = '<h3>📰 媒体来源分布</h3>';
+    const colors = ['#1a56db','#dc2626','#16a34a','#ea580c','#7c3aed','#0891b2','#be185d','#b45309'];
+    sortedMedia.forEach(([label, count], idx) => {
+        const pct = Math.round(count / maxMedia * 100);
+        mediaChart.innerHTML += `<div class="chart-bar-row"><span class="chart-bar-label">${label}</span><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${pct}%;background:${colors[idx % colors.length]};"></div></div><span class="chart-bar-n">${count}</span></div>`;
+    });
+    const kwMap = {};
+    data.forEach(item => {
+        const text = (item.摘要 || '') + (item.标题 || '');
+        const kwList = { '国铁':['高铁','铁路','国铁'], '城际':['城际'], '地铁':['地铁'], '轨道':['轨道'], '综合交通枢纽':['枢纽'], '综合开发':['TOD','开发','综合开发'], '投融资':['融资','投资','投融资'], '可持续经营运营':['可持续','经营','运营'] };
+        for (const [kw, words] of Object.entries(kwList)) {
+            for (const w of words) {
+                if (text.includes(w)) { kwMap[kw] = (kwMap[kw] || 0) + 1; break; }
+            }
+        }
+    });
+    const sortedKw = Object.entries(kwMap).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const maxKw = sortedKw.length > 0 ? sortedKw[0][1] : 1;
+    const kwChart = document.getElementById('keywordChart');
+    kwChart.innerHTML = '<h3>🏷️ 关键词热度统计</h3>';
+    const kwColors = ['#7c3aed','#0891b2','#be185d','#b45309','#4f46e5','#059669','#d97706','#db2777'];
+    sortedKw.forEach(([label, count], idx) => {
+        const pct = Math.round(count / maxKw * 100);
+        kwChart.innerHTML += `<div class="chart-bar-row"><span class="chart-bar-label">${label}</span><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${pct}%;background:${kwColors[idx % kwColors.length]};"></div></div><span class="chart-bar-n">${count}</span></div>`;
+    });
+}
+
+function generateQuarterlySummary(data) {
+    if (!data || data.length === 0) return;
+    const qMap = {};
+    data.forEach(item => {
+        const date = item.日期 || '';
+        if (!date) return;
+        const parts = date.split('-');
+        if (parts.length < 2) return;
+        const year = parts[0];
+        const month = parseInt(parts[1], 10);
+        const q = Math.ceil(month / 3);
+        const key = `${year}年Q${q}`;
+        if (!qMap[key]) qMap[key] = { count:0, scopes: new Set(), contents: [] };
+        qMap[key].count++;
+        const text = (item.摘要 || '') + (item.标题 || '');
+        let scope = '全国';
+        if (text.includes('世界') || text.includes('国际')) scope = '世界';
+        else if (text.includes('广东省') || text.includes('广东')) scope = '广东省';
+        else if (text.includes('广州')) scope = '广州市';
+        qMap[key].scopes.add(scope);
+        qMap[key].contents.push(item.摘要 || '');
+    });
+    const container = document.getElementById('quarterlyGrid');
+    container.innerHTML = '';
+    const sortedKeys = Object.keys(qMap).sort((a,b) => {
+        const ya = parseInt(a.split('年')[0]), yb = parseInt(b.split('年')[0]);
+        if (ya !== yb) return yb - ya;
+        const qa = parseInt(a.split('Q')[1]), qb = parseInt(b.split('Q')[1]);
+        return qb - qa;
+    });
+    sortedKeys.forEach(key => {
+        const d = qMap[key];
+        const scopes = Array.from(d.scopes).join('、');
+        const allText = d.contents.join('。');
+        let summary = '';
+        const projects = [];
+        if (allText.includes('上海东站')) projects.push('东方枢纽上海东站');
+        if (allText.includes('北京通州')) projects.push('北京城市副中心站');
+        if (allText.includes('重庆东站')) projects.push('重庆东站');
+        if (allText.includes('西安东站')) projects.push('西安东站');
+        if (allText.includes('白云站')) projects.push('广州白云站');
+        if (projects.length > 0) summary += '核心项目：' + projects.slice(0,3).join('、') + '。';
+        const nums = [];
+        if (allText.includes('906公里')) nums.push('上海轨交突破900公里');
+        if (allText.includes('750公里')) nums.push('成都轨交突破750公里');
+        if (allText.includes('501公里')) nums.push('重庆轨交达501公里');
+        if (nums.length > 0) summary += '关键数据：' + nums.join('、') + '。';
+        if (!summary) summary = '本季度轨道交通综合开发稳步推进。';
+        const div = document.createElement('div');
+        div.className = 'quarter-card';
+        div.innerHTML = `
+            <div class="quarter-header"><span class="quarter-label">${key}</span><span class="quarter-count">${d.count} 条</span></div>
+            <div class="quarter-detail">📍 覆盖范围：${scopes}</div>
+            <div class="quarter-summary">${summary}</div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function filterTable() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const scopeFilter = document.getElementById('scopeFilter').value;
+    const keywordFilter = document.getElementById('keywordFilter').value;
+    const rows = document.getElementById('newsTable').getElementsByTagName('tr');
+    let count = 0;
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        if (cells.length < 7) continue;
+        const scopeCell = cells[2];
+        const titleCell = cells[3];
+        const mediaCell = cells[4];
+        const kwCell = cells[5];
+        const contentCell = cells[6];
+        let show = true;
+        if (filter) {
+            const text = (titleCell ? titleCell.textContent.toLowerCase() : '') + (mediaCell ? mediaCell.textContent.toLowerCase() : '') + (contentCell ? contentCell.textContent.toLowerCase() : '');
+            if (text.indexOf(filter) === -1) show = false;
+        }
+        if (scopeFilter !== 'all' && scopeCell) {
+            if (scopeCell.textContent.trim().indexOf(scopeFilter) === -1) show = false;
+        }
+        if (keywordFilter !== 'all' && kwCell) {
+            if (kwCell.textContent.trim().indexOf(keywordFilter) === -1) show = false;
+        }
+        rows[i].style.display = show ? '' : 'none';
+        if (show) count++;
+    }
+    document.getElementById('countTip').textContent = '共 ' + count + ' 条';
+}
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.innerHTML = '🌙';
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.innerHTML = '☀️';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+(function() {
+    const saved = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('themeToggle').innerHTML = saved === 'dark' ? '☀️' : '🌙';
+})();
+
+window.onscroll = function() {
+    const btn = document.getElementById('backToTop');
+    if (window.scrollY > 300) btn.classList.add('show');
+    else btn.classList.remove('show');
+};
+
+window.onload = function() {
+    renderNews(newsData);
+    generateStats(newsData);
+    generateCharts(newsData);
+    generateQuarterlySummary(newsData);
+    filterTable();
+};
+</script>
+</body>
+</html>
