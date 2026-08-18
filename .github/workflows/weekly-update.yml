@@ -2,31 +2,27 @@ name: 每周一自动抓取新闻
 
 on:
   schedule:
-    - cron: '0 1 * * 1'   # 这是UTC时间周一凌晨1点，也就是北京时间周一上午9点
-  workflow_dispatch:      # 这个可以让您随时手动点击“运行”
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
 
 jobs:
-  fetch-and-update:
+  fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 安装Python环境
+      - name: 安装Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      
-      - name: 安装小机器人需要的工具
-        run: |
-          pip install requests beautifulsoup4
-      
-      - name: 运行小机器人抓取新闻
+      - name: 安装工具
+        run: pip install requests beautifulsoup4
+      - name: 运行小机器人
         run: python news_spider.py
-      
-      - name: 把新数据提交回仓库
+      - name: 提交新数据
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add news_data.json
-          git commit -m "每周自动抓取新闻 $(date +'%Y-%m-%d')" || echo "没有新新闻需要更新"
+          git commit -m "每周自动更新新闻" || echo "无更新"
           git push
+          
