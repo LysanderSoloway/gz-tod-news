@@ -145,24 +145,41 @@ function renderNews(data) {
 function generateStats(data) {
     const container = document.getElementById('statsContainer');
     if (!data || data.length === 0) { container.innerHTML = ''; return; }
-    const typeCount = {};
+    
+    // 统计6个新分类
+    const typeCount = {
+        '项目建设进展': 0,
+        '规划公示/获批': 0,
+        '政策/行业观点': 0,
+        '商业配套/招商': 0,
+        '投融资': 0,
+        '可持续经营运营': 0
+    };
+    
+    // 统计4个范围
     const scopeCount = { '世界':0, '全国':0, '广东省':0, '广州市':0 };
+    
     data.forEach(item => {
         const type = item.类型 || '';
-        if (type) typeCount[type] = (typeCount[type] || 0) + 1;
+        if (typeCount[type] !== undefined) {
+            typeCount[type] = (typeCount[type] || 0) + 1;
+        }
         const scope = item.范围 || '全国';
-        if (scopeCount[scope] !== undefined) scopeCount[scope] = (scopeCount[scope] || 0) + 1;
+        if (scopeCount[scope] !== undefined) {
+            scopeCount[scope] = (scopeCount[scope] || 0) + 1;
+        }
     });
+    
     const total = data.length;
+    
     container.innerHTML = `
         <div class="stat"><div class="n">${total}</div><div class="l">收录报道总数</div></div>
-        <div class="stat"><div class="n">${typeCount['项目建设进展'] || 0}</div><div class="l">项目建设进展</div></div>
-        <div class="stat"><div class="n">${typeCount['规划公示/获批'] || 0}</div><div class="l">规划公示/获批</div></div>
-        <div class="stat"><div class="n">${typeCount['政策/行业观点'] || 0}</div><div class="l">政策/行业观点</div></div>
-        <div class="stat"><div class="n">${typeCount['商业配套/招商'] || 0}</div><div class="l">商业配套/招商</div></div>
-        <div class="stat"><div class="n">${typeCount['综合'] || 0}</div><div class="l">综合</div></div>
-        <div class="stat"><div class="n">${typeCount['政务网站发布'] || 0}</div><div class="l">政务网站发布</div></div>
-        <div class="stat"><div class="n">${typeCount['中央/地方媒体报道'] || 0}</div><div class="l">中央/地方媒体报道</div></div>
+        <div class="stat"><div class="n">${typeCount['项目建设进展']}</div><div class="l">项目建设进展</div></div>
+        <div class="stat"><div class="n">${typeCount['规划公示/获批']}</div><div class="l">规划公示/获批</div></div>
+        <div class="stat"><div class="n">${typeCount['政策/行业观点']}</div><div class="l">政策/行业观点</div></div>
+        <div class="stat"><div class="n">${typeCount['商业配套/招商']}</div><div class="l">商业配套/招商</div></div>
+        <div class="stat"><div class="n">${typeCount['投融资']}</div><div class="l">投融资</div></div>
+        <div class="stat"><div class="n">${typeCount['可持续经营运营']}</div><div class="l">可持续经营运营</div></div>
         <div class="stat scope-world"><div class="n">${scopeCount['世界']}</div><div class="l">🌐 世界范围</div></div>
         <div class="stat scope-national"><div class="n">${scopeCount['全国']}</div><div class="l">🇨🇳 全国范围</div></div>
         <div class="stat scope-gd"><div class="n">${scopeCount['广东省']}</div><div class="l">📗 广东省范围</div></div>
