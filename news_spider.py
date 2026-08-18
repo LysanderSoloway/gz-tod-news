@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import re
 from datetime import datetime
 
 # ============================================================
@@ -15,14 +16,63 @@ TYPE_RULES = {
     "可持续经营运营": ["可持续", "经营", "运营", "营收", "盈利", "客流", "票务", "多元化", "造血", "盈利模式"]
 }
 
-def classify_news(title, summary=""):
-    """根据标题和摘要自动判断分类"""
-    text = title + summary
-    for cat, keywords in TYPE_RULES.items():
-        for kw in keywords:
-            if kw in text:
-                return cat
-    return "综合"  # 如果都不匹配，默认归为“综合”
+# ============================================================
+# 自动生成摘要函数
+# ============================================================
+def generate_summary(title, source=""):
+    """根据标题和来源自动生成一句话摘要"""
+    # 如果是空标题，返回空
+    if not title:
+        return ""
+    
+    # 1. 特殊处理：国土交通行业监测月报
+    if "国土交通行业监测月报" in title:
+        # 提取月份
+        month_match = re.search(r'（(\d{4})年(\d{1,2})月）', title)
+        if month_match:
+            year = month_match.group(1)
+            month = month_match.group(2)
+            return f"中国国土经济学会TOD专委会发布{year}年{month}月行业监测报告，涵盖国土交通综合规划与开发动态。"
+        else:
+            return "中国国土经济学会TOD专委会发布行业监测报告，涵盖国土交通综合规划与开发动态。"
+    
+    # 2. 特殊处理：中国城市轨道交通TOD监测月报
+    if "中国城市轨道交通TOD监测月报" in title:
+        month_match = re.search(r'（(\d{4})年(\d{1,2})月）', title)
+        if month_match:
+            year = month_match.group(1)
+            month = month_match.group(2)
+            return f"发布{year}年{month}月中国城市轨道交通TOD监测月报，聚焦轨道交通TOD综合开发动态。"
+        else:
+            return "发布中国城市轨道交通TOD监测月报，聚焦轨道交通TOD综合开发动态。"
+    
+    # 3. 一般新闻：从标题提取核心信息
+    # 去掉冗余前缀（如“标题：”）
+    clean_title = re.sub(r'^.*?[：:]', '', title)
+    
+    # 如果标题太短，直接返回
+    if len(clean_title) < 10:
+        return clean_title
+    
+    # 提取关键词
+    keywords = []
+    if "高铁" in clean_title or "铁路" in clean_title:
+        keywords.append("国铁")
+    if "城际" in clean_title:
+        keywords.append("城际")
+    if "地铁" in clean_title:
+        keywords.append("地铁")
+    if "TOD" in clean_title or "综合开发" in clean_title:
+        keywords.append("综合开发")
+    if "枢纽" in clean_title:
+        keywords.append("枢纽")
+    
+    # 构建摘要
+    if keywords:
+        kw_str = "、".join(keywords[:3])
+        return f"{clean_title[:60]}（涉及{kw_str}领域）"
+    else:
+        return clean_title[:80] + ("..." if len(clean_title) > 80 else "")
 
 # ============================================================
 # 以下是从您的 index.html 里提取的 133 条历史新闻
@@ -164,14 +214,27 @@ HISTORICAL_NEWS = [
 ]
 
 # ============================================================
-# 给历史新闻补上“类型”字段
+# 给历史新闻补上“类型”和“摘要”
 # ============================================================
-def add_type_to_history():
+def add_type_and_summary_to_history():
     for item in HISTORICAL_NEWS:
         if "类型" not in item:
             item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
+        if "摘要" not in item or not item["摘要"]:
+            item["摘要"] = generate_summary(item["标题"], item.get("来源", ""))
 
-add_type_to_history()
+add_type_and_summary_to_history()
+
+# ============================================================
+# 分类函数
+# ============================================================
+def classify_news(title, summary=""):
+    text = title + summary
+    for cat, keywords in TYPE_RULES.items():
+        for kw in keywords:
+            if kw in text:
+                return cat
+    return "综合"
 
 # ============================================================
 # 以下是小机器人抓取新新闻的逻辑
@@ -181,10 +244,11 @@ def load_existing():
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             saved = json.load(f)
-            # 如果已有的数据没有“类型”字段，也补上
             for item in saved:
                 if "类型" not in item:
                     item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
+                if "摘要" not in item or not item["摘要"]:
+                    item["摘要"] = generate_summary(item["标题"], item.get("来源", ""))
             return saved
     except:
         return None
@@ -205,7 +269,7 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0'}
 
     sources = [
-        {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
+        {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 15},
         {"name": "广州市规划局", "url": "https://ghzyj.gz.gov.cn/ywpd/cxgh/ghxkgsgb/", "scope": "广州市", "select": "ul.list li a", "limit": 8},
         {"name": "南方日报", "url": "https://news.nfnews.com/guangdong/", "scope": "广东省", "select": "a", "limit": 8},
         {"name": "广州日报（大洋网）", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 8},
@@ -256,8 +320,8 @@ def fetch_news():
                             break
                 if not keywords:
                     keywords.append("轨道")
-                # 自动分类
                 news_type = classify_news(title, "")
+                summary = generate_summary(title, src['name'])
                 all_news.append({
                     "日期": datetime.now().strftime("%Y-%m-%d"),
                     "标题": title,
@@ -265,7 +329,7 @@ def fetch_news():
                     "来源": src['name'],
                     "范围": scope,
                     "关键词": keywords,
-                    "摘要": "",
+                    "摘要": summary,
                     "类型": news_type
                 })
                 existing_titles.add(title[:20])
