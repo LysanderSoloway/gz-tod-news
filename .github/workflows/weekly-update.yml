@@ -8,21 +8,26 @@ on:
 jobs:
   fetch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - name: 安装Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+      
       - name: 安装工具
         run: pip install requests beautifulsoup4
+      
       - name: 运行小机器人
         run: python news_spider.py
+      
       - name: 提交新数据
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add news_data.json
-          git commit -m "每周自动更新新闻" || echo "无更新"
+          git diff --staged --quiet || git commit -m "每周自动更新新闻 $(date +'%Y-%m-%d')"
           git push
-          
