@@ -161,29 +161,24 @@ def fetch_news():
     # 先检查是否已有 news_data.json，如果有且包含历史数据，就使用它；否则用内置历史数据
     existing = load_existing()
     if existing and len(existing) >= 100:
-        # 已有完整数据，直接使用
         all_news = existing
         print(f"📚 加载已有数据：{len(all_news)} 条")
     else:
-        # 否则使用内置历史数据
         all_news = HISTORICAL_NEWS.copy()
         print(f"📚 内置历史数据：{len(all_news)} 条")
 
-    # 建立标题索引，用于去重
     existing_titles = {item["标题"][:20] for item in all_news}
     new_count = 0
     headers = {'User-Agent': 'Mozilla/5.0'}
 
     # ============================================================
-    # 抓取新新闻：从更多国内网站（共12个）
+    # 抓取新新闻：从多个国内网站
     # ============================================================
     sources = [
-        # 原有4个
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "广州市规划局", "url": "https://ghzyj.gz.gov.cn/ywpd/cxgh/ghxkgsgb/", "scope": "广州市", "select": "ul.list li a", "limit": 8},
         {"name": "南方日报", "url": "https://news.nfnews.com/guangdong/", "scope": "广东省", "select": "a", "limit": 8},
         {"name": "广州日报（大洋网）", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 8},
-        # 新增8个
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a", "limit": 8},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 8},
         {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/news/", "scope": "全国", "select": "a", "limit": 8},
@@ -214,7 +209,6 @@ def fetch_news():
                         link = src['url'].split('/')[0] + '//' + src['url'].split('/')[2] + link
                     else:
                         link = src['url'].rstrip('/') + '/' + link.lstrip('/')
-                # 自动判断范围
                 if "世界" in title or "国际" in title:
                     scope = "世界"
                 elif "广东" in title or "深圳" in title or "佛山" in title:
@@ -223,7 +217,6 @@ def fetch_news():
                     scope = "广州市"
                 else:
                     scope = src['scope']
-                # 自动生成关键词
                 keywords = []
                 kw_map = {'国铁': ['高铁','铁路','国铁'], '城际': ['城际'], '地铁': ['地铁'], '轨道': ['轨道','轨交'], '综合交通枢纽': ['枢纽'], '综合开发': ['TOD','综合开发','上盖','站城'], '投融资': ['融资','投资','资本','基金'], '可持续经营运营': ['可持续','经营','运营']}
                 for kw, words in kw_map.items():
@@ -250,7 +243,7 @@ def fetch_news():
             print(f"❌ {src['name']} 出错: {e}")
 
     # ============================================================
-    # 内置国际新闻（作为固定补充，确保世界范围有内容）
+    # 内置国际新闻
     # ============================================================
     international_news = [
         {"日期": datetime.now().strftime("%Y-%m-%d"), "标题": "Global Construction Review：欧盟批准500亿欧元跨境铁路投资计划", "链接": "https://www.globalconstructionreview.com/eu-approves-50bn-cross-border-rail-investment/", "来源": "Global Construction Review", "范围": "世界", "关键词": ["国铁"], "摘要": "欧洲跨境铁路网络建设获得重大资金支持。"},
@@ -266,7 +259,12 @@ def fetch_news():
             all_news.append(item)
             new_count += 1
 
-    # 保存到 news_data.json
+    # ============================================================
+    # 按日期从新到旧排序
+    # ============================================================
+    all_news.sort(key=lambda x: x["日期"], reverse=True)
+
+    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
