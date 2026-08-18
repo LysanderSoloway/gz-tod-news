@@ -4,45 +4,28 @@ import json
 from datetime import datetime
 
 # ============================================================
-# 分类规则：告诉小机器人什么词对应什么类别
+# 分类规则
 # ============================================================
+TYPE_RULES = {
+    "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "推进", "建设", "进展", "完成", "交付", "贯通", "合龙", "施工"],
+    "规划公示/获批": ["规划", "公示", "获批", "审议", "通过", "方案", "批复", "可研", "立项", "选址", "公示"],
+    "政策/行业观点": ["政策", "出台", "发布", "意见", "办法", "条例", "观点", "论坛", "会议", "座谈", "解读", "建议"],
+    "商业配套/招商": ["商业", "招商", "商场", "商业配套", "签约", "入驻", "开业", "品牌", "零售", "商铺"],
+    "投融资": ["投资", "融资", "资本", "基金", "授信", "债券", "REITs", "PPP", "资金", "亿元", "万亿", "贷款"],
+    "可持续经营运营": ["可持续", "经营", "运营", "营收", "盈利", "客流", "票务", "多元化", "造血", "盈利模式"]
+}
+
 def classify_news(title, summary=""):
-    text = (title + " " + summary).lower()
-    
-    # 各类别的关键词列表
-    rules = {
-        "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "运行", "贯通", "合龙", "浇筑", "架设", 
-                         "主体结构", "铺轨", "试运行", "初期运营", "建设", "施工", "推进", "完成", "突破"],
-        "规划公示/获批": ["规划", "公示", "获批", "批复", "通过", "审议", "发布", "印发", "出台", "征求意见", 
-                         "方案", "设计", "选址", "用地预审", "可研", "可行性研究"],
-        "政策/行业观点": ["政策", "意见", "通知", "办法", "条例", "规定", "标准", "规范", "报告", "研究", "分析", 
-                         "观点", "建议", "提案", "会议", "论坛", "研讨", "讲话", "精神"],
-        "商业配套/招商": ["招商", "签约", "入驻", "开业", "封顶", "商业", "综合体", "购物中心", "商场", "品牌", 
-                         "商户", "投资", "合作", "协议"],
-        "投融资": ["融资", "投资", "资本", "基金", "债券", "授信", "贷款", "资金", "预算", "财务", "资产", 
-                  "PPP", "REITs", "专项债", "债券"],
-        "可持续经营运营": ["可持续", "经营", "运营", "管理", "维护", "盈利", "收支", "票价", "客流量", "运量", 
-                         "环保", "绿色", "低碳", "节能", "双碳"],
-    }
-    
-    # 匹配规则，优先匹配第一个命中的
-    for category, keywords in rules.items():
-        for keyword in keywords:
-            if keyword in text:
-                return category
-    
-    # 如果都不匹配，尝试更宽泛的匹配
-    if "TOD" in text or "综合开发" in text or "站城" in text:
-        return "综合开发"
-    if "枢纽" in text or "换乘" in text or "接驳" in text:
-        return "综合交通枢纽"
-    if "地铁" in text or "轨道" in text or "城际" in text:
-        return "轨道交通"
-    
-    return "综合"
+    """根据标题和摘要自动判断分类"""
+    text = title + summary
+    for cat, keywords in TYPE_RULES.items():
+        for kw in keywords:
+            if kw in text:
+                return cat
+    return "综合"  # 如果都不匹配，默认归为“综合”
 
 # ============================================================
-# 历史新闻数据（您原有的133条）
+# 以下是从您的 index.html 里提取的 133 条历史新闻
 # ============================================================
 HISTORICAL_NEWS = [
     {"日期": "2025-03-12", "标题": "欧盟投入500亿欧元推进跨境铁路网建设", "链接": "#", "来源": "欧盟委员会", "范围": "世界", "关键词": ["国铁"], "摘要": "500亿欧元基金支持跨境高铁走廊。"},
@@ -181,18 +164,34 @@ HISTORICAL_NEWS = [
 ]
 
 # ============================================================
-# 以下是小机器人的主程序
+# 给历史新闻补上“类型”字段
 # ============================================================
+def add_type_to_history():
+    for item in HISTORICAL_NEWS:
+        if "类型" not in item:
+            item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
+
+add_type_to_history()
+
+# ============================================================
+# 以下是小机器人抓取新新闻的逻辑
+# ============================================================
+
 def load_existing():
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
+            saved = json.load(f)
+            # 如果已有的数据没有“类型”字段，也补上
+            for item in saved:
+                if "类型" not in item:
+                    item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
+            return saved
     except:
         return None
 
 def fetch_news():
     print("🤖 超级小机器人开始干活啦！")
-
+    
     existing = load_existing()
     if existing and len(existing) >= 100:
         all_news = existing
@@ -257,9 +256,8 @@ def fetch_news():
                             break
                 if not keywords:
                     keywords.append("轨道")
-                # ---------- 新增：调用分类函数 ----------
+                # 自动分类
                 news_type = classify_news(title, "")
-                # ---------------------------------------
                 all_news.append({
                     "日期": datetime.now().strftime("%Y-%m-%d"),
                     "标题": title,
@@ -268,7 +266,7 @@ def fetch_news():
                     "范围": scope,
                     "关键词": keywords,
                     "摘要": "",
-                    "类型": news_type  # 新增字段
+                    "类型": news_type
                 })
                 existing_titles.add(title[:20])
                 count += 1
@@ -277,7 +275,7 @@ def fetch_news():
         except Exception as e:
             print(f"❌ {src['name']} 出错: {e}")
 
-    # 国际新闻
+    # 内置国际新闻
     international_news = [
         {"日期": datetime.now().strftime("%Y-%m-%d"), "标题": "Global Construction Review：欧盟批准500亿欧元跨境铁路投资计划", "链接": "https://www.globalconstructionreview.com/eu-approves-50bn-cross-border-rail-investment/", "来源": "Global Construction Review", "范围": "世界", "关键词": ["国铁"], "摘要": "欧洲跨境铁路网络建设获得重大资金支持。"},
         {"日期": datetime.now().strftime("%Y-%m-%d"), "标题": "IRJ：JR东日本公布新一代城际铁路可持续经营方案", "链接": "https://www.railjournal.com/jr-east-unveils-next-gen-intercity-plan/", "来源": "International Railway Journal", "范围": "世界", "关键词": ["城际", "可持续经营运营"], "摘要": "通过站点综合开发与绿能升级实现降碳30%目标。"},
@@ -289,19 +287,14 @@ def fetch_news():
 
     for item in international_news:
         if item["标题"][:20] not in existing_titles:
-            # 国际新闻也自动分类
             item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
             all_news.append(item)
             new_count += 1
 
-    # 对历史新闻也补上分类（如果还没有类型字段）
-    for item in all_news:
-        if "类型" not in item:
-            item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
-
     # 按日期从新到旧排序
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
+    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
