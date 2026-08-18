@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 
 # ============================================================
-# 分类规则
+# 分类规则（提前定义，确保所有函数都能访问）
 # ============================================================
 TYPE_RULES = {
     "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "推进", "建设", "进展", "完成", "交付", "贯通", "合龙", "施工"],
@@ -17,17 +17,26 @@ TYPE_RULES = {
 }
 
 # ============================================================
+# 分类函数（提前定义，确保所有函数都能调用）
+# ============================================================
+def classify_news(title, summary=""):
+    text = title + summary
+    for cat, keywords in TYPE_RULES.items():
+        for kw in keywords:
+            if kw in text:
+                return cat
+    return "综合"
+
+# ============================================================
 # 自动生成摘要函数
 # ============================================================
 def generate_summary(title, source=""):
     """根据标题和来源自动生成一句话摘要"""
-    # 如果是空标题，返回空
     if not title:
         return ""
     
     # 1. 特殊处理：国土交通行业监测月报
     if "国土交通行业监测月报" in title:
-        # 提取月份
         month_match = re.search(r'（(\d{4})年(\d{1,2})月）', title)
         if month_match:
             year = month_match.group(1)
@@ -47,14 +56,10 @@ def generate_summary(title, source=""):
             return "发布中国城市轨道交通TOD监测月报，聚焦轨道交通TOD综合开发动态。"
     
     # 3. 一般新闻：从标题提取核心信息
-    # 去掉冗余前缀（如“标题：”）
     clean_title = re.sub(r'^.*?[：:]', '', title)
-    
-    # 如果标题太短，直接返回
     if len(clean_title) < 10:
         return clean_title
     
-    # 提取关键词
     keywords = []
     if "高铁" in clean_title or "铁路" in clean_title:
         keywords.append("国铁")
@@ -67,7 +72,6 @@ def generate_summary(title, source=""):
     if "枢纽" in clean_title:
         keywords.append("枢纽")
     
-    # 构建摘要
     if keywords:
         kw_str = "、".join(keywords[:3])
         return f"{clean_title[:60]}（涉及{kw_str}领域）"
@@ -214,7 +218,7 @@ HISTORICAL_NEWS = [
 ]
 
 # ============================================================
-# 给历史新闻补上“类型”和“摘要”
+# 给历史新闻补上“类型”和“摘要”（此时 classify_news 已定义）
 # ============================================================
 def add_type_and_summary_to_history():
     for item in HISTORICAL_NEWS:
@@ -224,17 +228,6 @@ def add_type_and_summary_to_history():
             item["摘要"] = generate_summary(item["标题"], item.get("来源", ""))
 
 add_type_and_summary_to_history()
-
-# ============================================================
-# 分类函数
-# ============================================================
-def classify_news(title, summary=""):
-    text = title + summary
-    for cat, keywords in TYPE_RULES.items():
-        for kw in keywords:
-            if kw in text:
-                return cat
-    return "综合"
 
 # ============================================================
 # 以下是小机器人抓取新新闻的逻辑
