@@ -217,6 +217,8 @@ function generateCharts(data) {
 
 function generateQuarterlySummary(data) {
     if (!data || data.length === 0) return;
+    
+    // 按季度分组
     const qMap = {};
     data.forEach(item => {
         const date = item.日期 || '';
@@ -227,36 +229,142 @@ function generateQuarterlySummary(data) {
         const month = parseInt(parts[1], 10);
         const q = Math.ceil(month / 3);
         const key = `${year}年Q${q}`;
-        if (!qMap[key]) qMap[key] = { count:0, scopes: new Set(), contents: [] };
+        if (!qMap[key]) {
+            qMap[key] = { 
+                count: 0, 
+                scopes: new Set(), 
+                titles: [], 
+                sources: [],
+                keywords: [],
+                types: [],
+                projects: new Set()
+            };
+        }
         qMap[key].count++;
         qMap[key].scopes.add(item.范围 || '全国');
-        qMap[key].contents.push(item.摘要 || '');
+        if (item.来源) qMap[key].sources.push(item.来源);
+        if (item.关键词) {
+            item.关键词.forEach(kw => qMap[key].keywords.push(kw));
+        }
+        if (item.类型) qMap[key].types.push(item.类型);
+        
+        // 从标题中提取项目名称
+        const title = item.标题 || '';
+        // 定义项目关键词映射
+        const projectMap = {
+            '上海东站': '东方枢纽上海东站',
+            '上海南站': '上海南站',
+            '北京通州': '北京城市副中心站',
+            '北京丰台': '丰台站',
+            '重庆东站': '重庆东站',
+            '西安东站': '西安东站',
+            '广州白云站': '广州白云站',
+            '广州南站': '广州南站',
+            '苏州北站': '苏州北站',
+            '南京北站': '南京北站',
+            '绍兴北站': '绍兴高铁北站',
+            '石家庄北站': '石家庄北站',
+            '太原站': '太原站',
+            '千佛山站': '济南千佛山站',
+            '京溪路站': '京溪路站',
+            '横沥': '南沙横沥TOD',
+            '槎头': '白云槎头车辆段',
+            '鱼珠': '鱼珠车辆段',
+            '双岗': '双岗停车场',
+            '东风站': '从化东风站',
+            '霍营': '霍营综合交通枢纽'
+        };
+        for (const [keyWord, projectName] of Object.entries(projectMap)) {
+            if (title.includes(keyWord)) {
+                qMap[key].projects.add(projectName);
+            }
+        }
     });
+    
     const container = document.getElementById('quarterlyGrid');
     container.innerHTML = '';
+    
+    // 按时间倒序排列
     const sortedKeys = Object.keys(qMap).sort((a,b) => {
         const ya = parseInt(a.split('年')[0]), yb = parseInt(b.split('年')[0]);
         if (ya !== yb) return yb - ya;
         const qa = parseInt(a.split('Q')[1]), qb = parseInt(b.split('Q')[1]);
         return qb - qa;
     });
+    
     sortedKeys.forEach(key => {
         const d = qMap[key];
         const scopes = Array.from(d.scopes).join('、');
-        const allText = d.contents.join('。');
-        let summary = '';
-        const projects = [];
-        if (allText.includes('上海东站')) projects.push('东方枢纽上海东站');
-        if (allText.includes('北京通州')) projects.push('北京城市副中心站');
-        if (allText.includes('重庆东站')) projects.push('重庆东站');
-        if (allText.includes('西安东站')) projects.push('西安东站');
-        if (allText.includes('白云站')) projects.push('广州白云站');
-        if (projects.length > 0) summary += '核心项目：' + projects.slice(0,3).join('、') + '。';
-        if (!summary) summary = '本季度轨道交通综合开发稳步推进。';
+        
+        // 提取核心项目（最多3个）
+        const projects = Array.from(d.projects);
+        let projectStr = '';
+        if (projects.length > 0) {
+            projectStr = '🏗️ 核心项目：' + projects.slice(0, 3).join('、');
+        }
+        
+        // 统计主要类型（动态）
+        const typeCount = {};
+        d.types.forEach(t => {
+            typeCount[t] = (typeCount[t] || 0) + 1;
+        });
+        const sortedTypes = Object.entries(typeCount).sort((a,b) => b[1]-a[1]).slice(0, 3);
+        let typeStr = '';
+        if (sortedTypes.length > 0) {
+            // 提取动词：从类型名称中提取关键词
+            const actionMap = {
+                '项目建设进展': '建设进展',
+                '规划公示/获批': '规划获批',
+                '政策/行业观点': '政策动态',
+                '商业配套/招商': '商业招商',
+                '投融资': '投融资',
+                '可持续经营运营': '运营动态'
+            };
+            const actions = sortedTypes.map(([t]) => actionMap[t] || t);
+            typeStr = '📌 主要动态：' + actions.join('、');
+        }
+        
+        // 统计主要关键词（最多3个）
+        const kwCount = {};
+        d.keywords.forEach(kw => {
+            kwCount[kw] = (kwCount[kw] || 0) + 1;
+        });
+        const sortedKw = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0, 3);
+        let kwStr = '';
+        if (sortedKw.length > 0) {
+            kwStr = '🏷️ 关键词：' + sortedKw.map(([kw]) => kw).join('、');
+        }
+        
+        // 统计主要来源（最多2个）
+        const sourceCount = {};
+        d.sources.forEach(s => {
+            sourceCount[s] = (sourceCount[s] || 0) + 1;
+        });
+        const sortedSources = Object.entries(sourceCount).sort((a,b) => b[1]-a[1]).slice(0, 2);
+        let sourceStr = '';
+        if (sortedSources.length > 0) {
+            sourceStr = '📰 主要来源：' + sortedSources.map(([s]) => s).join('、');
+        }
+        
+        // 组合总结信息
+        let summaryParts = [];
+        if (projectStr) summaryParts.push(projectStr);
+        if (typeStr) summaryParts.push(typeStr);
+        if (kwStr) summaryParts.push(kwStr);
+        if (sourceStr) summaryParts.push(sourceStr);
+        
+        let summary = summaryParts.join('；');
+        if (!summary) {
+            summary = '本季度轨道交通综合开发稳步推进。';
+        }
+        
         const div = document.createElement('div');
         div.className = 'quarter-card';
         div.innerHTML = `
-            <div class="quarter-header"><span class="quarter-label">${key}</span><span class="quarter-count">${d.count} 条</span></div>
+            <div class="quarter-header">
+                <span class="quarter-label">${key}</span>
+                <span class="quarter-count">${d.count} 条</span>
+            </div>
             <div class="quarter-detail">📍 覆盖范围：${scopes}</div>
             <div class="quarter-summary">${summary}</div>
         `;
