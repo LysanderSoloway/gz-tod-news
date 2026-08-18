@@ -4,7 +4,45 @@ import json
 from datetime import datetime
 
 # ============================================================
-# 以下是从您的 index.html 里提取的 133 条历史新闻（直接内置）
+# 分类规则：告诉小机器人什么词对应什么类别
+# ============================================================
+def classify_news(title, summary=""):
+    text = (title + " " + summary).lower()
+    
+    # 各类别的关键词列表
+    rules = {
+        "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "运行", "贯通", "合龙", "浇筑", "架设", 
+                         "主体结构", "铺轨", "试运行", "初期运营", "建设", "施工", "推进", "完成", "突破"],
+        "规划公示/获批": ["规划", "公示", "获批", "批复", "通过", "审议", "发布", "印发", "出台", "征求意见", 
+                         "方案", "设计", "选址", "用地预审", "可研", "可行性研究"],
+        "政策/行业观点": ["政策", "意见", "通知", "办法", "条例", "规定", "标准", "规范", "报告", "研究", "分析", 
+                         "观点", "建议", "提案", "会议", "论坛", "研讨", "讲话", "精神"],
+        "商业配套/招商": ["招商", "签约", "入驻", "开业", "封顶", "商业", "综合体", "购物中心", "商场", "品牌", 
+                         "商户", "投资", "合作", "协议"],
+        "投融资": ["融资", "投资", "资本", "基金", "债券", "授信", "贷款", "资金", "预算", "财务", "资产", 
+                  "PPP", "REITs", "专项债", "债券"],
+        "可持续经营运营": ["可持续", "经营", "运营", "管理", "维护", "盈利", "收支", "票价", "客流量", "运量", 
+                         "环保", "绿色", "低碳", "节能", "双碳"],
+    }
+    
+    # 匹配规则，优先匹配第一个命中的
+    for category, keywords in rules.items():
+        for keyword in keywords:
+            if keyword in text:
+                return category
+    
+    # 如果都不匹配，尝试更宽泛的匹配
+    if "TOD" in text or "综合开发" in text or "站城" in text:
+        return "综合开发"
+    if "枢纽" in text or "换乘" in text or "接驳" in text:
+        return "综合交通枢纽"
+    if "地铁" in text or "轨道" in text or "城际" in text:
+        return "轨道交通"
+    
+    return "综合"
+
+# ============================================================
+# 历史新闻数据（您原有的133条）
 # ============================================================
 HISTORICAL_NEWS = [
     {"日期": "2025-03-12", "标题": "欧盟投入500亿欧元推进跨境铁路网建设", "链接": "#", "来源": "欧盟委员会", "范围": "世界", "关键词": ["国铁"], "摘要": "500亿欧元基金支持跨境高铁走廊。"},
@@ -143,22 +181,18 @@ HISTORICAL_NEWS = [
 ]
 
 # ============================================================
-# 以上是全部133条历史新闻，下面是小机器人抓取新新闻的逻辑
+# 以下是小机器人的主程序
 # ============================================================
-
 def load_existing():
-    """加载现有数据（优先从历史列表加载，并合并已保存的 news_data.json）"""
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
-            saved = json.load(f)
-            return saved
+            return json.load(f)
     except:
         return None
 
 def fetch_news():
     print("🤖 超级小机器人开始干活啦！")
-    
-    # 先检查是否已有 news_data.json，如果有且包含历史数据，就使用它；否则用内置历史数据
+
     existing = load_existing()
     if existing and len(existing) >= 100:
         all_news = existing
@@ -171,9 +205,6 @@ def fetch_news():
     new_count = 0
     headers = {'User-Agent': 'Mozilla/5.0'}
 
-    # ============================================================
-    # 抓取新新闻：从多个国内网站
-    # ============================================================
     sources = [
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "广州市规划局", "url": "https://ghzyj.gz.gov.cn/ywpd/cxgh/ghxkgsgb/", "scope": "广州市", "select": "ul.list li a", "limit": 8},
@@ -226,6 +257,9 @@ def fetch_news():
                             break
                 if not keywords:
                     keywords.append("轨道")
+                # ---------- 新增：调用分类函数 ----------
+                news_type = classify_news(title, "")
+                # ---------------------------------------
                 all_news.append({
                     "日期": datetime.now().strftime("%Y-%m-%d"),
                     "标题": title,
@@ -233,7 +267,8 @@ def fetch_news():
                     "来源": src['name'],
                     "范围": scope,
                     "关键词": keywords,
-                    "摘要": ""
+                    "摘要": "",
+                    "类型": news_type  # 新增字段
                 })
                 existing_titles.add(title[:20])
                 count += 1
@@ -242,9 +277,7 @@ def fetch_news():
         except Exception as e:
             print(f"❌ {src['name']} 出错: {e}")
 
-    # ============================================================
-    # 内置国际新闻
-    # ============================================================
+    # 国际新闻
     international_news = [
         {"日期": datetime.now().strftime("%Y-%m-%d"), "标题": "Global Construction Review：欧盟批准500亿欧元跨境铁路投资计划", "链接": "https://www.globalconstructionreview.com/eu-approves-50bn-cross-border-rail-investment/", "来源": "Global Construction Review", "范围": "世界", "关键词": ["国铁"], "摘要": "欧洲跨境铁路网络建设获得重大资金支持。"},
         {"日期": datetime.now().strftime("%Y-%m-%d"), "标题": "IRJ：JR东日本公布新一代城际铁路可持续经营方案", "链接": "https://www.railjournal.com/jr-east-unveils-next-gen-intercity-plan/", "来源": "International Railway Journal", "范围": "世界", "关键词": ["城际", "可持续经营运营"], "摘要": "通过站点综合开发与绿能升级实现降碳30%目标。"},
@@ -256,15 +289,19 @@ def fetch_news():
 
     for item in international_news:
         if item["标题"][:20] not in existing_titles:
+            # 国际新闻也自动分类
+            item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
             all_news.append(item)
             new_count += 1
 
-    # ============================================================
+    # 对历史新闻也补上分类（如果还没有类型字段）
+    for item in all_news:
+        if "类型" not in item:
+            item["类型"] = classify_news(item["标题"], item.get("摘要", ""))
+
     # 按日期从新到旧排序
-    # ============================================================
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
-    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
