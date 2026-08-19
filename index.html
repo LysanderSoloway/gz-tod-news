@@ -6,98 +6,100 @@
     <title>轨道交通综合开发新闻报道监测</title>
     <style>
                     :root {
-            --primary: #0a1e2e;
-            --primary-light: #1a3a5a;
-            --primary-dark: #061520;
-            --accent: #2b6b9f;
-            --accent-hover: #3a7fb0;
-            --accent-light: #4a8fc7;
-            --accent-pale: #d4e4f0;
-            --red: #b53b3b;
-            --green: #3d7a5a;
-            --orange: #b86b2c;
-            --purple: #6b4c8a;
-            --ink: #1a2a3a;
-            --ink-light: #2a4a6a;
-            --muted: #4a6a8a;
-            --muted-light: #7a9ab0;
-            --bg: #f4f8fc;
+            --primary: #1a5a7a;
+            --primary-light: #2a7a9a;
+            --primary-dark: #0e3a52;
+            --accent: #4a9fc7;
+            --accent-hover: #5ab0d5;
+            --accent-light: #7abdd5;
+            --accent-pale: #c8e4f0;
+            --accent-bg: #e8f4f8;
+            --red: #c05a4a;
+            --green: #4a9a7a;
+            --orange: #c08a4a;
+            --purple: #7a5a9a;
+            --ink: #1a3a4a;
+            --ink-light: #2a5a6a;
+            --muted: #4a6a7a;
+            --muted-light: #7a9aaa;
+            --bg: #e8f4f8;
             --card: #ffffff;
-            --card-hover: #eef4fa;
-            --border: #c8dae8;
-            --shadow-sm: 0 2px 6px rgba(10,30,46,0.08);
-            --shadow: 0 4px 14px rgba(10,30,46,0.12);
-            --shadow-lg: 0 8px 30px rgba(10,30,46,0.18);
+            --card-hover: #f4fafc;
+            --border: #c8dce8;
+            --shadow-sm: 0 2px 8px rgba(26,90,122,0.08);
+            --shadow: 0 4px 16px rgba(26,90,122,0.12);
+            --shadow-lg: 0 8px 32px rgba(26,90,122,0.18);
             --radius: 12px;
             --radius-sm: 8px;
-            --table-stripe: #f0f6fc;
-            --table-hover: #e4eef8;
-            --summary-bg: #eaf2f8;
+            --table-stripe: #f4fafc;
+            --table-hover: #e8f2f8;
+            --summary-bg: #f0f6fa;
             --chart-track: #dce8f0;
-            --hero-bg: #0a1e2e;
+            --hero-bg: #1a5a7a;
             --hero-text: #ffffff;
-            --hero-sub: rgba(255,255,255,0.75);
-            --badge-world: #2b6b9f;
-            --badge-national: #b53b3b;
-            --badge-guangdong: #3d7a5a;
-            --badge-guangzhou: #b86b2c;
-            --badge-world-bg: #d4e4f0;
-            --badge-national-bg: #f5e3e3;
-            --badge-guangdong-bg: #e3f0e8;
-            --badge-guangzhou-bg: #f5ede3;
-            --stat-blue: #0a1e2e;
-            --stat-red: #b53b3b;
-            --stat-green: #3d7a5a;
-            --stat-orange: #b86b2c;
-            --stat-purple: #6b4c8a;
-            --stat-teal: #2b6b8a;
-            --stat-gray: #4a6a8a;
+            --hero-sub: rgba(255,255,255,0.8);
+            --badge-world: #4a9fc7;
+            --badge-national: #c05a4a;
+            --badge-guangdong: #4a9a7a;
+            --badge-guangzhou: #c08a4a;
+            --badge-world-bg: #dcecf4;
+            --badge-national-bg: #f5e4e0;
+            --badge-guangdong-bg: #e0f0e8;
+            --badge-guangzhou-bg: #f5ece0;
+            --stat-blue: #1a5a7a;
+            --stat-red: #c05a4a;
+            --stat-green: #4a9a7a;
+            --stat-orange: #c08a4a;
+            --stat-purple: #7a5a9a;
+            --stat-teal: #3a8a9a;
+            --stat-gray: #4a6a7a;
         }
         [data-theme="dark"] {
-            --primary: #b8d0e0;
-            --primary-light: #8aaccc;
-            --primary-dark: #0a1e2e;
-            --accent: #4a8fc7;
-            --accent-hover: #6aa8d5;
-            --accent-light: #8ac0e8;
-            --accent-pale: #1a2a4a;
-            --red: #d97a7a;
-            --green: #6aaa8a;
-            --orange: #d99a5a;
-            --purple: #9a7aaa;
+            --primary: #7abdd5;
+            --primary-light: #9ad0e5;
+            --primary-dark: #1a3a4a;
+            --accent: #5ab0d5;
+            --accent-hover: #7ac0e0;
+            --accent-light: #9ad0e8;
+            --accent-pale: #1a3a4a;
+            --accent-bg: #0e1a2a;
+            --red: #d98a7a;
+            --green: #7abaa0;
+            --orange: #d0aa6a;
+            --purple: #a08ac0;
             --ink: #d5dce3;
             --ink-light: #b0bac5;
-            --muted: #7a9ab0;
-            --muted-light: #5a7a90;
-            --bg: #0e1a26;
-            --card: #1a2a3e;
-            --card-hover: #243a52;
-            --border: #2a4a62;
-            --shadow-sm: 0 2px 6px rgba(0,0,0,0.4);
-            --shadow: 0 4px 14px rgba(0,0,0,0.5);
-            --shadow-lg: 0 8px 30px rgba(0,0,0,0.6);
-            --table-stripe: #1a2a3e;
-            --table-hover: #243a52;
-            --summary-bg: #1a2a3e;
-            --chart-track: #1a2a42;
-            --hero-bg: #061520;
-            --hero-text: #eef4fa;
-            --hero-sub: rgba(255,255,255,0.6);
-            --badge-world: #4a8fc7;
-            --badge-national: #d97a7a;
-            --badge-guangdong: #6aaa8a;
-            --badge-guangzhou: #d99a5a;
-            --badge-world-bg: #1a2a4a;
-            --badge-national-bg: #3a1a1a;
+            --muted: #7a9aaa;
+            --muted-light: #5a7a8a;
+            --bg: #0e1a22;
+            --card: #1a2a3a;
+            --card-hover: #223a4a;
+            --border: #2a4a5a;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --table-stripe: #1a2a3a;
+            --table-hover: #223a4a;
+            --summary-bg: #1a2a3a;
+            --chart-track: #1a2a3a;
+            --hero-bg: #0e1a22;
+            --hero-text: #e8f4f8;
+            --hero-sub: rgba(255,255,255,0.7);
+            --badge-world: #5ab0d5;
+            --badge-national: #d98a7a;
+            --badge-guangdong: #7abaa0;
+            --badge-guangzhou: #d0aa6a;
+            --badge-world-bg: #1a3a4a;
+            --badge-national-bg: #3a2a1a;
             --badge-guangdong-bg: #1a3a2a;
-            --badge-guangzhou-bg: #3a2a1a;
-            --stat-blue: #6a9ac5;
-            --stat-red: #d97a7a;
-            --stat-green: #6aaa8a;
-            --stat-orange: #d99a5a;
-            --stat-purple: #9a7aaa;
+            --badge-guangzhou-bg: #3a3a1a;
+            --stat-blue: #7abdd5;
+            --stat-red: #d98a7a;
+            --stat-green: #7abaa0;
+            --stat-orange: #d0aa6a;
+            --stat-purple: #a08ac0;
             --stat-teal: #6aaaaa;
-            --stat-gray: #7a9ab0;
+            --stat-gray: #7a9aaa;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { 
@@ -112,6 +114,7 @@
             color: var(--hero-text); 
             padding:48px 32px 40px; 
             border-bottom: 3px solid var(--accent);
+            box-shadow: var(--shadow);
         }
         .hero .inner { max-width:1360px; margin:0 auto; }
         .hero h1 { 
@@ -123,8 +126,8 @@
         }
         .hero .code { 
             display:inline-block; 
-            background:rgba(255,255,255,0.10); 
-            border:1px solid rgba(255,255,255,0.15); 
+            background:rgba(255,255,255,0.12); 
+            border:1px solid rgba(255,255,255,0.18); 
             border-radius:20px; 
             padding:4px 16px; 
             font-size:13px; 
@@ -134,7 +137,7 @@
         }
         .hero p { 
             font-size:14.5px; 
-            opacity:0.8; 
+            opacity:0.85; 
             max-width:900px; 
             line-height:1.8; 
             color: var(--hero-sub);
@@ -353,7 +356,7 @@
         .toolbar input:focus, .toolbar select:focus { 
             outline:none; 
             border-color:var(--accent); 
-            box-shadow:0 0 0 3px rgba(43,107,159,0.15); 
+            box-shadow:0 0 0 3px rgba(74,159,199,0.2); 
         }
         .toolbar input { flex:1; min-width:180px; }
         .table-wrap { max-width:1360px; margin:0 auto 44px; padding:0 32px; }
@@ -426,22 +429,22 @@
         [data-theme="dark"] .scope-national { background:var(--badge-national-bg); color:var(--badge-national); }
         [data-theme="dark"] .scope-guangdong { background:var(--badge-guangdong-bg); color:var(--badge-guangdong); }
         [data-theme="dark"] .scope-guangzhou { background:var(--badge-guangzhou-bg); color:var(--badge-guangzhou); }
-        .kw-railway { background:#dce4f0; color:#2a4a6a; }
+        .kw-railway { background:#dce8f0; color:#2a5a6a; }
         .kw-intercity { background:#d4eaf0; color:#2a6a7a; }
-        .kw-metro { background:#f0e0ec; color:#8a4a7a; }
-        .kw-track { background:#dce4f5; color:#3a4a8a; }
-        .kw-hub { background:#f5ece0; color:#8a6a3a; }
+        .kw-metro { background:#f0e4ec; color:#7a4a6a; }
+        .kw-track { background:#dce4f0; color:#3a4a7a; }
+        .kw-hub { background:#f5ece0; color:#7a6a3a; }
         .kw-dev { background:#dcece4; color:#2a6a4a; }
-        .kw-finance { background:#f5e4e4; color:#8a3a3a; }
-        .kw-sustain { background:#dce8f5; color:#2a5a8a; }
-        [data-theme="dark"] .kw-railway { background:#1a2a4a; color:#8aaccc; }
+        .kw-finance { background:#f5e4e4; color:#7a3a3a; }
+        .kw-sustain { background:#dce8f0; color:#2a5a7a; }
+        [data-theme="dark"] .kw-railway { background:#1a2a3a; color:#7aaac0; }
         [data-theme="dark"] .kw-intercity { background:#1a3a4a; color:#7abac5; }
-        [data-theme="dark"] .kw-metro { background:#3a2a4a; color:#c58ab5; }
-        [data-theme="dark"] .kw-track { background:#2a2a4a; color:#9a8ac5; }
-        [data-theme="dark"] .kw-hub { background:#3a3a1a; color:#c5aa6a; }
+        [data-theme="dark"] .kw-metro { background:#3a2a3a; color:#b58aaa; }
+        [data-theme="dark"] .kw-track { background:#2a2a3a; color:#8a8ab5; }
+        [data-theme="dark"] .kw-hub { background:#3a3a1a; color:#b5aa6a; }
         [data-theme="dark"] .kw-dev { background:#1a3a2a; color:#6aaa8a; }
-        [data-theme="dark"] .kw-finance { background:#3a1a1a; color:#c57a7a; }
-        [data-theme="dark"] .kw-sustain { background:#1a2a4a; color:#7aaac5; }
+        [data-theme="dark"] .kw-finance { background:#3a1a1a; color:#b57a6a; }
+        [data-theme="dark"] .kw-sustain { background:#1a2a3a; color:#7aaaac; }
         a { color:var(--accent); text-decoration:none; }
         a:hover { color:var(--accent-hover); text-decoration:underline; }
         [data-theme="dark"] .ttl a { color:var(--accent-light); }
@@ -610,7 +613,6 @@ function generateCharts(data) {
     // 媒体分类映射表
     // ============================================================
     const mediaCategoryMap = {
-        // 中央/国家级媒体
         '人民网': '中央媒体',
         '新华网': '中央媒体',
         '光明网': '中央媒体',
@@ -626,9 +628,10 @@ function generateCharts(data) {
         '人民数字联播网': '中央媒体',
         '人民日报客户端': '中央媒体',
         '新华社': '中央媒体',
+        '国务院新闻办': '中央媒体',
+        '交通运输部': '中央媒体',
         '人民铁道报': '行业媒体',
         '中国交通报': '行业媒体',
-        // 地方媒体
         '南方日报': '地方媒体',
         '南方都市报': '地方媒体',
         '广州日报': '地方媒体',
@@ -662,18 +665,19 @@ function generateCharts(data) {
         '瓯海发布': '地方媒体',
         '澎湃新闻': '地方媒体',
         '上观新闻': '地方媒体',
+        '香港商报': '地方媒体',
         '腾讯新闻': '商业/门户媒体',
         '搜狐（南方+）': '商业/门户媒体',
         '搜狐网': '商业/门户媒体',
         '网易': '商业/门户媒体',
         '新浪新闻': '商业/门户媒体',
+        '百度百家号': '商业/门户媒体',
         '观点网': '商业/门户媒体',
         '东方财富网': '财经媒体',
         '中国经营报': '财经媒体',
         '中国发展网': '财经媒体',
         '中国产业经济信息网': '财经媒体',
         '企业观察网': '财经媒体',
-        // 行业媒体
         '中国TOD网': '行业媒体',
         '中国轨道交通网': '行业媒体',
         '中国城市轨道交通网': '行业媒体',
@@ -681,7 +685,7 @@ function generateCharts(data) {
         '世界轨道交通资讯网': '行业媒体',
         '中国建筑': '行业媒体',
         '中国经济新闻网': '行业媒体',
-        // 政务/官方平台
+        '中国中铁': '行业媒体',
         '广州市政府网': '政务平台',
         '广州市规划局': '政务平台',
         '广州市规划和自然资源局': '政务平台',
@@ -690,14 +694,13 @@ function generateCharts(data) {
         '广东省政府网': '政务平台',
         '广东省发改委': '政务平台',
         '广东省交通运输厅': '政务平台',
-        '天津市政务网': '政务平台',
+        '天津政务网': '政务平台',
         '天津轨道交通集团': '政务平台',
         '北京市规自委': '政务平台',
         '北京市人民政府': '政务平台',
         '重庆市人民政府': '政务平台',
         '重庆市交通运输委员会': '政务平台',
         '沈阳市人民政府': '政务平台',
-        '沈阳市发改委': '政务平台',
         '济南市人民政府': '政务平台',
         '山东省交通运输厅': '政务平台',
         '浙江省交通运输厅': '政务平台',
@@ -708,7 +711,7 @@ function generateCharts(data) {
         '山西省政府': '政务平台',
         '河南省人民政府': '政务平台',
         '从化区政府网': '政务平台',
-        // 国际/其他
+        '广西交通投资集团': '政务平台',
         '欧盟委员会': '国际/其他',
         'Global Construction Review': '国际/其他',
         'International Railway Journal': '国际/其他',
@@ -722,32 +725,30 @@ function generateCharts(data) {
         '德国铁路DB官网': '国际/其他',
         '墨西哥城政府官网': '国际/其他',
         '伦敦交通局TfL官网': '国际/其他',
-        '中国中铁': '行业媒体',
         '百度百科': '其他',
-        '百度百家号': '商业/门户媒体',
-        '香港商报': '地方媒体',
-        '广西交通投资集团': '政务平台',
-        '广西省政府': '政务平台',
-        '国务院新闻办': '中央媒体',
-        '交通运输部': '中央媒体',
     };
 
-    // ============================================================
-    // 获取媒体分类
-    // ============================================================
     function getMediaCategory(source) {
-        // 直接匹配
-        if (mediaCategoryMap[source]) {
-            return mediaCategoryMap[source];
-        }
-        // 模糊匹配（处理类似“南方日报”和“南方日报（广州）”的情况）
+        if (mediaCategoryMap[source]) return mediaCategoryMap[source];
         for (const [key, category] of Object.entries(mediaCategoryMap)) {
-            if (source.includes(key) || key.includes(source)) {
-                return category;
-            }
+            if (source.includes(key) || key.includes(source)) return category;
         }
         return '其他';
     }
+
+    // ============================================================
+    // 统一蓝色系调色板（从深到浅）
+    // ============================================================
+    const bluePalette = [
+        '#1a5a7a',  // 最深 - 普蓝
+        '#2a7a9a',  // 深蓝
+        '#3a8aaa',  // 中深蓝
+        '#4a9fc7',  // 湖蓝
+        '#5ab0d5',  // 亮湖蓝
+        '#7abdd5',  // 淡湖蓝
+        '#9ad0e5',  // 更淡蓝
+        '#b8dce8',  // 最淡蓝
+    ];
 
     // ============================================================
     // 统计媒体分类
@@ -759,23 +760,10 @@ function generateCharts(data) {
         catCount[category] = (catCount[category] || 0) + 1;
     });
 
-    // 按数量排序
     const sortedCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]);
     const maxCat = sortedCats.length > 0 ? sortedCats[0][1] : 1;
 
-    // 颜色映射
-    const colorMap = {
-        '中央媒体': '#dc2626',
-        '地方媒体': '#1a56db',
-        '行业媒体': '#7c3aed',
-        '财经媒体': '#ea580c',
-        '商业/门户媒体': '#0891b2',
-        '政务平台': '#16a34a',
-        '国际/其他': '#4f46e5',
-        '其他': '#6b7280'
-    };
-
-    // 渲染图表
+    // 渲染媒体分布图表
     const mediaChart = document.getElementById('mediaChart');
     mediaChart.innerHTML = '<h3>📰 媒体来源分布（按类别）</h3>';
 
@@ -784,9 +772,9 @@ function generateCharts(data) {
         return;
     }
 
-    sortedCats.forEach(([category, count]) => {
+    sortedCats.forEach(([category, count], index) => {
         const pct = Math.round(count / maxCat * 100);
-        const color = colorMap[category] || '#6b7280';
+        const color = bluePalette[index % bluePalette.length];
         mediaChart.innerHTML += `
             <div class="chart-bar-row">
                 <span class="chart-bar-label">${category}</span>
@@ -799,7 +787,7 @@ function generateCharts(data) {
     });
 
     // ============================================================
-    // 关键词统计（保持不变，优化显示）
+    // 关键词统计（使用同一套蓝色系）
     // ============================================================
     const kwMap = {};
     data.forEach(item => {
@@ -809,16 +797,19 @@ function generateCharts(data) {
     });
     const sortedKw = Object.entries(kwMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
     const maxKw = sortedKw.length > 0 ? sortedKw[0][1] : 1;
+
     const kwChart = document.getElementById('keywordChart');
     kwChart.innerHTML = '<h3>🏷️ 关键词热度统计</h3>';
-    const kwColors = ['#7c3aed', '#0891b2', '#be185d', '#b45309', '#4f46e5', '#059669', '#d97706', '#db2777'];
-    sortedKw.forEach(([label, count], idx) => {
+
+    sortedKw.forEach(([label, count], index) => {
         const pct = Math.round(count / maxKw * 100);
+        // 从蓝色系调色板取色（从深到浅）
+        const color = bluePalette[index % bluePalette.length];
         kwChart.innerHTML += `
             <div class="chart-bar-row">
                 <span class="chart-bar-label">${label}</span>
                 <div class="chart-bar-track">
-                    <div class="chart-bar-fill" style="width:${pct}%;background:${kwColors[idx % kwColors.length]};"></div>
+                    <div class="chart-bar-fill" style="width:${pct}%;background:${color};"></div>
                 </div>
                 <span class="chart-bar-n">${count}</span>
             </div>
