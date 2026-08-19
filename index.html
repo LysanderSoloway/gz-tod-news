@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>轨道交通综合开发新闻报道监测</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
-                    :root {
+        :root {
             --primary: #1a5a7a;
             --primary-light: #2a7a9a;
             --primary-dark: #0e3a52;
@@ -160,7 +161,7 @@
         }
         .meta-bar .line b { color:var(--ink); font-weight:600; }
         .meta-bar .lead b { color:var(--ink-light); }
-                .stats { 
+        .stats { 
             max-width:1360px; 
             margin:28px auto 0; 
             padding:0 32px; 
@@ -195,7 +196,6 @@
             font-weight:500; 
             letter-spacing:0.2px; 
         }
-        /* 范围卡片数字颜色（只改数字颜色，背景保持白色） */
         .stat.scope-world .n { color:var(--stat-teal); }
         .stat.scope-national .n { color:var(--stat-red); }
         .stat.scope-gd .n { color:var(--stat-green); }
@@ -204,7 +204,6 @@
         [data-theme="dark"] .stat.scope-national .n { color:var(--stat-red); }
         [data-theme="dark"] .stat.scope-gd .n { color:var(--stat-green); }
         [data-theme="dark"] .stat.scope-gz .n { color:var(--stat-orange); }
-        /* 确保范围卡片背景保持白色 */
         .stat.scope-world, .stat.scope-national, .stat.scope-gd, .stat.scope-gz {
             background: var(--card);
         }
@@ -538,6 +537,13 @@
 <div class="meta-bar"><div class="inner"><div class="line"><b>监测范围：</b>世界 · 中国 · 广东省 · 广州市 四级轨道交通综合开发</div><div class="line lead"><b>关键领域：</b>国铁综合开发 · 城际轨道投融资 · 地铁TOD · 轨道可持续经营 · 综合交通枢纽站城融合 · 场站综合体综合开发</div><div class="line"><b>最近更新：</b> <span id="lastUpdate">加载中...</span> · <b>收录报道：</b><span id="totalCount">0</span> 条</div></div></div>
 <div class="stats" id="statsContainer"></div>
 <div class="chart-section"><div class="chart-title">📊 数据图表总结</div><div class="chart-grid"><div class="chart-panel" id="mediaChart"><h3>📰 媒体来源分布</h3></div><div class="chart-panel" id="keywordChart"><h3>🏷️ 关键词热度统计</h3></div></div></div>
+<!-- 新闻趋势图 -->
+<div class="chart-section" style="margin-top: 20px;">
+    <div class="chart-title">📈 新闻月度趋势</div>
+    <div class="chart-panel" style="padding: 10px;">
+        <div id="trendChart" style="width: 100%; height: 320px;"></div>
+    </div>
+</div>
 <div class="quarterly-section"><div class="quarterly-title">📝 季度新闻总结</div><div class="quarterly-grid" id="quarterlyGrid"></div></div>
 <div class="toolbar"><input type="text" placeholder="🔍 搜索标题、媒体、关键词..." id="searchInput" onkeyup="filterTable()"/><select id="scopeFilter" onchange="filterTable()"><option value="all">全部范围</option><option value="世界">🌐 世界</option><option value="全国">🇨🇳 全国</option><option value="广东省">📗 广东省</option><option value="广州市">📙 广州市</option></select><select id="keywordFilter" onchange="filterTable()"><option value="all">全部关键词</option><option value="国铁">国铁</option><option value="城际">城际</option><option value="地铁">地铁</option><option value="轨道">轨道</option><option value="综合交通枢纽">综合交通枢纽</option><option value="综合开发">综合开发</option><option value="投融资">投融资</option><option value="可持续经营运营">可持续经营运营</option></select><span class="count-tip" id="countTip">共 0 条</span></div>
 <div class="table-wrap"><div class="scroll-box"><table><thead><tr><th class="num">#</th><th>日期</th><th class="scope-col">范围</th><th>标题</th><th>媒体/来源</th><th>关键词</th><th>摘要</th></tr></thead><tbody id="newsTable"><tr><td colspan="7" class="loading">⏳ 正在读取新闻数据...</td></tr></tbody></table></div></div>
@@ -574,8 +580,6 @@ function renderNews(data) {
 function generateStats(data) {
     const container = document.getElementById('statsContainer');
     if (!data || data.length === 0) { container.innerHTML = ''; return; }
-    
-    // 统计6个新分类
     const typeCount = {
         '项目建设进展': 0,
         '规划公示/获批': 0,
@@ -584,23 +588,14 @@ function generateStats(data) {
         '投融资': 0,
         '可持续经营运营': 0
     };
-    
-    // 统计4个范围
     const scopeCount = { '世界':0, '全国':0, '广东省':0, '广州市':0 };
-    
     data.forEach(item => {
         const type = item.类型 || '';
-        if (typeCount[type] !== undefined) {
-            typeCount[type] = (typeCount[type] || 0) + 1;
-        }
+        if (typeCount[type] !== undefined) typeCount[type] = (typeCount[type] || 0) + 1;
         const scope = item.范围 || '全国';
-        if (scopeCount[scope] !== undefined) {
-            scopeCount[scope] = (scopeCount[scope] || 0) + 1;
-        }
+        if (scopeCount[scope] !== undefined) scopeCount[scope] = (scopeCount[scope] || 0) + 1;
     });
-    
     const total = data.length;
-    
     container.innerHTML = `
         <div class="stat"><div class="n">${total}</div><div class="l">收录报道总数</div></div>
         <div class="stat"><div class="n">${typeCount['项目建设进展']}</div><div class="l">项目建设进展</div></div>
@@ -619,121 +614,51 @@ function generateStats(data) {
 function generateCharts(data) {
     if (!data || data.length === 0) return;
 
-    // ============================================================
-    // 媒体分类映射表
-    // ============================================================
     const mediaCategoryMap = {
-        '人民网': '中央媒体',
-        '新华网': '中央媒体',
-        '光明网': '中央媒体',
-        '央广网': '中央媒体',
-        '人民日报': '中央媒体',
-        '中国网': '中央媒体',
-        '中国青年报': '中央媒体',
-        '北京日报': '中央媒体',
-        '北京电视台': '中央媒体',
-        '中工网': '中央媒体',
-        '中国甘肃网': '中央媒体',
-        '中国城市网': '中央媒体',
-        '人民数字联播网': '中央媒体',
-        '人民日报客户端': '中央媒体',
-        '新华社': '中央媒体',
-        '国务院新闻办': '中央媒体',
-        '交通运输部': '中央媒体',
-        '人民铁道报': '行业媒体',
-        '中国交通报': '行业媒体',
-        '南方日报': '地方媒体',
-        '南方都市报': '地方媒体',
-        '广州日报': '地方媒体',
-        '大洋网（广州日报）': '地方媒体',
-        '大洋网': '地方媒体',
-        '深圳新闻网': '地方媒体',
-        '深圳特区报': '地方媒体',
-        '重庆日报': '地方媒体',
-        '羊城晚报': '地方媒体',
-        '广州日报新花城': '地方媒体',
-        '新湖南': '地方媒体',
-        '湖北日报': '地方媒体',
-        '长江网': '地方媒体',
-        '长沙晚报': '地方媒体',
-        '四川网络广播电视台': '地方媒体',
-        '华西都市报': '地方媒体',
-        '陕西日报': '地方媒体',
-        '沈阳网': '地方媒体',
-        '彩练新闻': '地方媒体',
-        '中国吉林网': '地方媒体',
-        '川观新闻': '地方媒体',
-        '河北新闻网': '地方媒体',
-        '河工新闻网': '地方媒体',
-        '乌海日报': '地方媒体',
-        '湛江日报': '地方媒体',
-        '广东建设报': '地方媒体',
-        '黑龙江日报': '地方媒体',
-        '济南日报': '地方媒体',
-        '南京日报': '地方媒体',
-        '天津广播': '地方媒体',
-        '瓯海发布': '地方媒体',
-        '澎湃新闻': '地方媒体',
-        '上观新闻': '地方媒体',
+        '人民网': '中央媒体', '新华网': '中央媒体', '光明网': '中央媒体', '央广网': '中央媒体',
+        '人民日报': '中央媒体', '中国网': '中央媒体', '中国青年报': '中央媒体', '北京日报': '中央媒体',
+        '北京电视台': '中央媒体', '中工网': '中央媒体', '中国甘肃网': '中央媒体', '中国城市网': '中央媒体',
+        '人民数字联播网': '中央媒体', '人民日报客户端': '中央媒体', '新华社': '中央媒体',
+        '国务院新闻办': '中央媒体', '交通运输部': '中央媒体',
+        '人民铁道报': '行业媒体', '中国交通报': '行业媒体',
+        '南方日报': '地方媒体', '南方都市报': '地方媒体', '广州日报': '地方媒体',
+        '大洋网（广州日报）': '地方媒体', '大洋网': '地方媒体', '深圳新闻网': '地方媒体',
+        '深圳特区报': '地方媒体', '重庆日报': '地方媒体', '羊城晚报': '地方媒体',
+        '广州日报新花城': '地方媒体', '新湖南': '地方媒体', '湖北日报': '地方媒体',
+        '长江网': '地方媒体', '长沙晚报': '地方媒体', '四川网络广播电视台': '地方媒体',
+        '华西都市报': '地方媒体', '陕西日报': '地方媒体', '沈阳网': '地方媒体',
+        '彩练新闻': '地方媒体', '中国吉林网': '地方媒体', '川观新闻': '地方媒体',
+        '河北新闻网': '地方媒体', '河工新闻网': '地方媒体', '乌海日报': '地方媒体',
+        '湛江日报': '地方媒体', '广东建设报': '地方媒体', '黑龙江日报': '地方媒体',
+        '济南日报': '地方媒体', '南京日报': '地方媒体', '天津广播': '地方媒体',
+        '瓯海发布': '地方媒体', '澎湃新闻': '地方媒体', '上观新闻': '地方媒体',
         '香港商报': '地方媒体',
-        '腾讯新闻': '商业/门户媒体',
-        '搜狐（南方+）': '商业/门户媒体',
-        '搜狐网': '商业/门户媒体',
-        '网易': '商业/门户媒体',
-        '新浪新闻': '商业/门户媒体',
-        '百度百家号': '商业/门户媒体',
+        '腾讯新闻': '商业/门户媒体', '搜狐（南方+）': '商业/门户媒体', '搜狐网': '商业/门户媒体',
+        '网易': '商业/门户媒体', '新浪新闻': '商业/门户媒体', '百度百家号': '商业/门户媒体',
         '观点网': '商业/门户媒体',
-        '东方财富网': '财经媒体',
-        '中国经营报': '财经媒体',
-        '中国发展网': '财经媒体',
-        '中国产业经济信息网': '财经媒体',
-        '企业观察网': '财经媒体',
-        '中国TOD网': '行业媒体',
-        '中国轨道交通网': '行业媒体',
-        '中国城市轨道交通网': '行业媒体',
-        '中国城市轨道交通协会': '行业媒体',
-        '世界轨道交通资讯网': '行业媒体',
-        '中国建筑': '行业媒体',
-        '中国经济新闻网': '行业媒体',
-        '中国中铁': '行业媒体',
-        '广州市政府网': '政务平台',
-        '广州市规划局': '政务平台',
-        '广州市规划和自然资源局': '政务平台',
-        '广州市交通运输局': '政务平台',
-        '广州市发改委': '政务平台',
-        '广东省政府网': '政务平台',
-        '广东省发改委': '政务平台',
-        '广东省交通运输厅': '政务平台',
-        '天津政务网': '政务平台',
-        '天津轨道交通集团': '政务平台',
-        '北京市规自委': '政务平台',
-        '北京市人民政府': '政务平台',
-        '重庆市人民政府': '政务平台',
-        '重庆市交通运输委员会': '政务平台',
-        '沈阳市人民政府': '政务平台',
-        '济南市人民政府': '政务平台',
-        '山东省交通运输厅': '政务平台',
-        '浙江省交通运输厅': '政务平台',
-        '杭州市人民政府': '政务平台',
-        '江苏省人民政府': '政务平台',
-        '南京市规划和自然资源局': '政务平台',
-        '苏州市人民政府': '政务平台',
-        '山西省政府': '政务平台',
-        '河南省人民政府': '政务平台',
-        '从化区政府网': '政务平台',
-        '广西交通投资集团': '政务平台',
-        '欧盟委员会': '国际/其他',
-        'Global Construction Review': '国际/其他',
-        'International Railway Journal': '国际/其他',
-        'UITP': '国际/其他',
-        'China Daily': '国际/其他',
-        'Vietnam.vn': '国际/其他',
-        'The Standard': '国际/其他',
-        'JR东日本官网': '国际/其他',
-        '美国联邦铁路管理局': '国际/其他',
-        '新加坡LTA官网': '国际/其他',
-        '德国铁路DB官网': '国际/其他',
-        '墨西哥城政府官网': '国际/其他',
+        '东方财富网': '财经媒体', '中国经营报': '财经媒体', '中国发展网': '财经媒体',
+        '中国产业经济信息网': '财经媒体', '企业观察网': '财经媒体',
+        '中国TOD网': '行业媒体', '中国轨道交通网': '行业媒体', '中国城市轨道交通网': '行业媒体',
+        '中国城市轨道交通协会': '行业媒体', '世界轨道交通资讯网': '行业媒体',
+        '中国建筑': '行业媒体', '中国经济新闻网': '行业媒体', '中国中铁': '行业媒体',
+        '广州市政府网': '政务平台', '广州市规划局': '政务平台', '广州市规划和自然资源局': '政务平台',
+        '广州市交通运输局': '政务平台', '广州市发改委': '政务平台',
+        '广东省政府网': '政务平台', '广东省发改委': '政务平台', '广东省交通运输厅': '政务平台',
+        '天津政务网': '政务平台', '天津轨道交通集团': '政务平台',
+        '北京市规自委': '政务平台', '北京市人民政府': '政务平台',
+        '重庆市人民政府': '政务平台', '重庆市交通运输委员会': '政务平台',
+        '沈阳市人民政府': '政务平台', '济南市人民政府': '政务平台',
+        '山东省交通运输厅': '政务平台', '浙江省交通运输厅': '政务平台',
+        '杭州市人民政府': '政务平台', '江苏省人民政府': '政务平台',
+        '南京市规划和自然资源局': '政务平台', '苏州市人民政府': '政务平台',
+        '山西省政府': '政务平台', '河南省人民政府': '政务平台',
+        '从化区政府网': '政务平台', '广西交通投资集团': '政务平台',
+        '欧盟委员会': '国际/其他', 'Global Construction Review': '国际/其他',
+        'International Railway Journal': '国际/其他', 'UITP': '国际/其他',
+        'China Daily': '国际/其他', 'Vietnam.vn': '国际/其他',
+        'The Standard': '国际/其他', 'JR东日本官网': '国际/其他',
+        '美国联邦铁路管理局': '国际/其他', '新加坡LTA官网': '国际/其他',
+        '德国铁路DB官网': '国际/其他', '墨西哥城政府官网': '国际/其他',
         '伦敦交通局TfL官网': '国际/其他',
         '百度百科': '其他',
     };
@@ -746,42 +671,22 @@ function generateCharts(data) {
         return '其他';
     }
 
-    // ============================================================
-    // 统一蓝色系调色板（从深到浅）
-    // ============================================================
-    const bluePalette = [
-        '#1a5a7a',  // 最深 - 普蓝
-        '#2a7a9a',  // 深蓝
-        '#3a8aaa',  // 中深蓝
-        '#4a9fc7',  // 湖蓝
-        '#5ab0d5',  // 亮湖蓝
-        '#7abdd5',  // 淡湖蓝
-        '#9ad0e5',  // 更淡蓝
-        '#b8dce8',  // 最淡蓝
-    ];
+    const bluePalette = ['#1a5a7a','#2a7a9a','#3a8aaa','#4a9fc7','#5ab0d5','#7abdd5','#9ad0e5','#b8dce8'];
 
-    // ============================================================
-    // 统计媒体分类
-    // ============================================================
     const catCount = {};
     data.forEach(item => {
         const source = item.来源 || '未知';
         const category = getMediaCategory(source);
         catCount[category] = (catCount[category] || 0) + 1;
     });
-
     const sortedCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]);
     const maxCat = sortedCats.length > 0 ? sortedCats[0][1] : 1;
-
-    // 渲染媒体分布图表
     const mediaChart = document.getElementById('mediaChart');
     mediaChart.innerHTML = '<h3>📰 媒体来源分布（按类别）</h3>';
-
     if (sortedCats.length === 0) {
         mediaChart.innerHTML += '<div style="text-align:center;color:var(--muted);padding:20px;">暂无数据</div>';
         return;
     }
-
     sortedCats.forEach(([category, count], index) => {
         const pct = Math.round(count / maxCat * 100);
         const color = bluePalette[index % bluePalette.length];
@@ -796,9 +701,6 @@ function generateCharts(data) {
         `;
     });
 
-    // ============================================================
-    // 关键词统计（使用同一套蓝色系）
-    // ============================================================
     const kwMap = {};
     data.forEach(item => {
         (item.关键词 || []).forEach(kw => {
@@ -807,13 +709,10 @@ function generateCharts(data) {
     });
     const sortedKw = Object.entries(kwMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
     const maxKw = sortedKw.length > 0 ? sortedKw[0][1] : 1;
-
     const kwChart = document.getElementById('keywordChart');
     kwChart.innerHTML = '<h3>🏷️ 关键词热度统计</h3>';
-
     sortedKw.forEach(([label, count], index) => {
         const pct = Math.round(count / maxKw * 100);
-        // 从蓝色系调色板取色（从深到浅）
         const color = bluePalette[index % bluePalette.length];
         kwChart.innerHTML += `
             <div class="chart-bar-row">
@@ -827,10 +726,135 @@ function generateCharts(data) {
     });
 }
 
+function generateTrendChart(data) {
+    if (!data || data.length === 0) return;
+
+    const monthCount = {};
+    data.forEach(item => {
+        const date = item.日期 || '';
+        if (!date) return;
+        const month = date.substring(0, 7);
+        monthCount[month] = (monthCount[month] || 0) + 1;
+    });
+
+    const sortedMonths = Object.keys(monthCount).sort();
+    const values = sortedMonths.map(m => monthCount[m]);
+    const labels = sortedMonths.map(m => {
+        const parts = m.split('-');
+        return parts[0] + '年' + parseInt(parts[1]) + '月';
+    });
+
+    const chartDom = document.getElementById('trendChart');
+    if (!chartDom) return;
+    const myChart = echarts.init(chartDom);
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#b8d0e0' : '#1a3a4a';
+    const axisColor = isDark ? '#2a4a5a' : '#c8dce8';
+    const lineColor = '#4a9fc7';
+    const areaColor = isDark ? 'rgba(74,159,199,0.25)' : 'rgba(74,159,199,0.20)';
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            formatter: function(params) {
+                const p = params[0];
+                return `<strong>${p.name}</strong><br/>新闻数量：<strong>${p.value}</strong> 条`;
+            },
+            backgroundColor: isDark ? '#1a2a3a' : '#ffffff',
+            borderColor: isDark ? '#2a4a5a' : '#c8dce8',
+            textStyle: { color: isDark ? '#d5dce3' : '#1a3a4a' }
+        },
+        grid: {
+            left: '6%',
+            right: '6%',
+            bottom: '10%',
+            top: '8%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLine: { lineStyle: { color: axisColor } },
+            axisLabel: {
+                color: textColor,
+                fontSize: 11,
+                interval: Math.ceil(labels.length / 12)
+            },
+            splitLine: { show: false }
+        },
+        yAxis: {
+            type: 'value',
+            minInterval: 1,
+            axisLine: { show: false },
+            axisLabel: { color: textColor, fontSize: 11 },
+            splitLine: {
+                lineStyle: { color: axisColor, type: 'dashed' }
+            }
+        },
+        series: [{
+            data: values,
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            lineStyle: {
+                color: lineColor,
+                width: 3
+            },
+            areaStyle: {
+                color: areaColor
+            },
+            itemStyle: {
+                color: lineColor
+            },
+            markLine: {
+                silent: true,
+                label: {
+                    formatter: '平均: {c} 条',
+                    color: textColor,
+                    fontSize: 11
+                },
+                data: [{ type: 'average', name: '平均值' }],
+                lineStyle: {
+                    color: isDark ? '#5a7a8a' : '#8aaaac',
+                    type: 'dashed'
+                }
+            }
+        }]
+    };
+
+    myChart.setOption(option);
+    window.addEventListener('resize', function() { myChart.resize(); });
+
+    const originalToggle = toggleTheme;
+    toggleTheme = function() {
+        originalToggle();
+        setTimeout(() => {
+            const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark';
+            const newTextColor = isDarkNow ? '#b8d0e0' : '#1a3a4a';
+            const newAxisColor = isDarkNow ? '#2a4a5a' : '#c8dce8';
+            const newAreaColor = isDarkNow ? 'rgba(74,159,199,0.25)' : 'rgba(74,159,199,0.20)';
+            myChart.setOption({
+                xAxis: { axisLine: { lineStyle: { color: newAxisColor } }, axisLabel: { color: newTextColor } },
+                yAxis: { axisLabel: { color: newTextColor }, splitLine: { lineStyle: { color: newAxisColor } } },
+                series: [{
+                    lineStyle: { color: '#4a9fc7' },
+                    itemStyle: { color: '#4a9fc7' },
+                    areaStyle: { color: newAreaColor }
+                }],
+                tooltip: {
+                    backgroundColor: isDarkNow ? '#1a2a3a' : '#ffffff',
+                    borderColor: isDarkNow ? '#2a4a5a' : '#c8dce8',
+                    textStyle: { color: isDarkNow ? '#d5dce3' : '#1a3a4a' }
+                }
+            });
+        }, 50);
+    };
+}
+
 function generateQuarterlySummary(data) {
     if (!data || data.length === 0) return;
-    
-    // 按季度分组
     const qMap = {};
     data.forEach(item => {
         const date = item.日期 || '';
@@ -842,27 +866,14 @@ function generateQuarterlySummary(data) {
         const q = Math.ceil(month / 3);
         const key = `${year}年Q${q}`;
         if (!qMap[key]) {
-            qMap[key] = { 
-                count: 0, 
-                scopes: new Set(), 
-                titles: [], 
-                sources: [],
-                keywords: [],
-                types: [],
-                projects: new Set()
-            };
+            qMap[key] = { count: 0, scopes: new Set(), titles: [], sources: [], keywords: [], types: [], projects: new Set() };
         }
         qMap[key].count++;
         qMap[key].scopes.add(item.范围 || '全国');
         if (item.来源) qMap[key].sources.push(item.来源);
-        if (item.关键词) {
-            item.关键词.forEach(kw => qMap[key].keywords.push(kw));
-        }
+        if (item.关键词) item.关键词.forEach(kw => qMap[key].keywords.push(kw));
         if (item.类型) qMap[key].types.push(item.类型);
-        
-        // 从标题中提取项目名称
         const title = item.标题 || '';
-        // 定义项目关键词映射
         const projectMap = {
             '上海东站': '东方枢纽上海东站',
             '上海南站': '上海南站',
@@ -887,96 +898,48 @@ function generateQuarterlySummary(data) {
             '霍营': '霍营综合交通枢纽'
         };
         for (const [keyWord, projectName] of Object.entries(projectMap)) {
-            if (title.includes(keyWord)) {
-                qMap[key].projects.add(projectName);
-            }
+            if (title.includes(keyWord)) qMap[key].projects.add(projectName);
         }
     });
-    
     const container = document.getElementById('quarterlyGrid');
     container.innerHTML = '';
-    
-    // 按时间倒序排列
     const sortedKeys = Object.keys(qMap).sort((a,b) => {
         const ya = parseInt(a.split('年')[0]), yb = parseInt(b.split('年')[0]);
         if (ya !== yb) return yb - ya;
         const qa = parseInt(a.split('Q')[1]), qb = parseInt(b.split('Q')[1]);
         return qb - qa;
     });
-    
     sortedKeys.forEach(key => {
         const d = qMap[key];
         const scopes = Array.from(d.scopes).join('、');
-        
-        // 提取核心项目（最多3个）
         const projects = Array.from(d.projects);
-        let projectStr = '';
-        if (projects.length > 0) {
-            projectStr = '🏗️ 核心项目：' + projects.slice(0, 3).join('、');
-        }
-        
-        // 统计主要类型（动态）
+        let projectStr = projects.length > 0 ? '🏗️ 核心项目：' + projects.slice(0,3).join('、') : '';
         const typeCount = {};
-        d.types.forEach(t => {
-            typeCount[t] = (typeCount[t] || 0) + 1;
-        });
-        const sortedTypes = Object.entries(typeCount).sort((a,b) => b[1]-a[1]).slice(0, 3);
-        let typeStr = '';
-        if (sortedTypes.length > 0) {
-            // 提取动词：从类型名称中提取关键词
-            const actionMap = {
-                '项目建设进展': '建设进展',
-                '规划公示/获批': '规划获批',
-                '政策/行业观点': '政策动态',
-                '商业配套/招商': '商业招商',
-                '投融资': '投融资',
-                '可持续经营运营': '运营动态'
-            };
-            const actions = sortedTypes.map(([t]) => actionMap[t] || t);
-            typeStr = '📌 主要动态：' + actions.join('、');
-        }
-        
-        // 统计主要关键词（最多3个）
+        d.types.forEach(t => { typeCount[t] = (typeCount[t] || 0) + 1; });
+        const sortedTypes = Object.entries(typeCount).sort((a,b) => b[1]-a[1]).slice(0,3);
+        const actionMap = {
+            '项目建设进展': '建设进展',
+            '规划公示/获批': '规划获批',
+            '政策/行业观点': '政策动态',
+            '商业配套/招商': '商业招商',
+            '投融资': '投融资',
+            '可持续经营运营': '运营动态'
+        };
+        let typeStr = sortedTypes.length > 0 ? '📌 主要动态：' + sortedTypes.map(([t]) => actionMap[t] || t).join('、') : '';
         const kwCount = {};
-        d.keywords.forEach(kw => {
-            kwCount[kw] = (kwCount[kw] || 0) + 1;
-        });
-        const sortedKw = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0, 3);
-        let kwStr = '';
-        if (sortedKw.length > 0) {
-            kwStr = '🏷️ 关键词：' + sortedKw.map(([kw]) => kw).join('、');
-        }
-        
-        // 统计主要来源（最多2个）
+        d.keywords.forEach(kw => { kwCount[kw] = (kwCount[kw] || 0) + 1; });
+        const sortedKw = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0,3);
+        let kwStr = sortedKw.length > 0 ? '🏷️ 关键词：' + sortedKw.map(([kw]) => kw).join('、') : '';
         const sourceCount = {};
-        d.sources.forEach(s => {
-            sourceCount[s] = (sourceCount[s] || 0) + 1;
-        });
-        const sortedSources = Object.entries(sourceCount).sort((a,b) => b[1]-a[1]).slice(0, 2);
-        let sourceStr = '';
-        if (sortedSources.length > 0) {
-            sourceStr = '📰 主要来源：' + sortedSources.map(([s]) => s).join('、');
-        }
-        
-        // 组合总结信息
-        let summaryParts = [];
-        if (projectStr) summaryParts.push(projectStr);
-        if (typeStr) summaryParts.push(typeStr);
-        if (kwStr) summaryParts.push(kwStr);
-        if (sourceStr) summaryParts.push(sourceStr);
-        
-        let summary = summaryParts.join('；');
-        if (!summary) {
-            summary = '本季度轨道交通综合开发稳步推进。';
-        }
-        
+        d.sources.forEach(s => { sourceCount[s] = (sourceCount[s] || 0) + 1; });
+        const sortedSources = Object.entries(sourceCount).sort((a,b) => b[1]-a[1]).slice(0,2);
+        let sourceStr = sortedSources.length > 0 ? '📰 主要来源：' + sortedSources.map(([s]) => s).join('、') : '';
+        let summaryParts = [projectStr, typeStr, kwStr, sourceStr].filter(s => s);
+        let summary = summaryParts.length > 0 ? summaryParts.join('；') : '本季度轨道交通综合开发稳步推进。';
         const div = document.createElement('div');
         div.className = 'quarter-card';
         div.innerHTML = `
-            <div class="quarter-header">
-                <span class="quarter-label">${key}</span>
-                <span class="quarter-count">${d.count} 条</span>
-            </div>
+            <div class="quarter-header"><span class="quarter-label">${key}</span><span class="quarter-count">${d.count} 条</span></div>
             <div class="quarter-detail">📍 覆盖范围：${scopes}</div>
             <div class="quarter-summary">${summary}</div>
         `;
@@ -1051,6 +1014,7 @@ window.onload = function() {
             renderNews(data);
             generateStats(data);
             generateCharts(data);
+            generateTrendChart(data);
             generateQuarterlySummary(data);
             filterTable();
         })
