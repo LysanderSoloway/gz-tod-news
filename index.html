@@ -671,8 +671,19 @@ function generateCharts(data) {
         return '其他';
     }
 
-    const bluePalette = ['#1a5a7a','#2a7a9a','#3a8aaa','#4a9fc7','#5ab0d5','#7abdd5','#9ad0e5','#b8dce8'];
+    // 高对比度多彩调色板
+    const colorPalette = [
+        '#1a6a7a',  // 深青 - 地方媒体
+        '#c05a3a',  // 砖红 - 政务平台
+        '#2a6ab0',  // 亮蓝 - 中央媒体
+        '#3a9a6a',  // 翠绿 - 行业媒体
+        '#8a5aaa',  // 紫罗兰 - 国际/其他
+        '#d08a2a',  // 橙黄 - 商业/门户
+        '#a06a5a',  // 棕褐 - 其他
+        '#b84a6a',  // 玫红 - 财经媒体
+    ];
 
+    // 统计媒体分类
     const catCount = {};
     data.forEach(item => {
         const source = item.来源 || '未知';
@@ -689,7 +700,7 @@ function generateCharts(data) {
     }
     sortedCats.forEach(([category, count], index) => {
         const pct = Math.round(count / maxCat * 100);
-        const color = bluePalette[index % bluePalette.length];
+        const color = colorPalette[index % colorPalette.length];
         mediaChart.innerHTML += `
             <div class="chart-bar-row">
                 <span class="chart-bar-label">${category}</span>
@@ -701,6 +712,31 @@ function generateCharts(data) {
         `;
     });
 
+    // 关键词统计
+    const kwMap = {};
+    data.forEach(item => {
+        (item.关键词 || []).forEach(kw => {
+            kwMap[kw] = (kwMap[kw] || 0) + 1;
+        });
+    });
+    const sortedKw = Object.entries(kwMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const maxKw = sortedKw.length > 0 ? sortedKw[0][1] : 1;
+    const kwChart = document.getElementById('keywordChart');
+    kwChart.innerHTML = '<h3>🏷️ 关键词热度统计</h3>';
+    sortedKw.forEach(([label, count], index) => {
+        const pct = Math.round(count / maxKw * 100);
+        const color = colorPalette[(index + 4) % colorPalette.length];  // 偏移4位，让颜色错开
+        kwChart.innerHTML += `
+            <div class="chart-bar-row">
+                <span class="chart-bar-label">${label}</span>
+                <div class="chart-bar-track">
+                    <div class="chart-bar-fill" style="width:${pct}%;background:${color};"></div>
+                </div>
+                <span class="chart-bar-n">${count}</span>
+            </div>
+        `;
+    });
+}
     const kwMap = {};
     data.forEach(item => {
         (item.关键词 || []).forEach(kw => {
