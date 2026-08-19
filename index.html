@@ -737,34 +737,9 @@ function generateCharts(data) {
         `;
     });
 }
-    const kwMap = {};
-    data.forEach(item => {
-        (item.关键词 || []).forEach(kw => {
-            kwMap[kw] = (kwMap[kw] || 0) + 1;
-        });
-    });
-    const sortedKw = Object.entries(kwMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    const maxKw = sortedKw.length > 0 ? sortedKw[0][1] : 1;
-    const kwChart = document.getElementById('keywordChart');
-    kwChart.innerHTML = '<h3>🏷️ 关键词热度统计</h3>';
-    sortedKw.forEach(([label, count], index) => {
-        const pct = Math.round(count / maxKw * 100);
-        const color = bluePalette[index % bluePalette.length];
-        kwChart.innerHTML += `
-            <div class="chart-bar-row">
-                <span class="chart-bar-label">${label}</span>
-                <div class="chart-bar-track">
-                    <div class="chart-bar-fill" style="width:${pct}%;background:${color};"></div>
-                </div>
-                <span class="chart-bar-n">${count}</span>
-            </div>
-        `;
-    });
-}
 
 function generateTrendChart(data) {
     if (!data || data.length === 0) return;
-
     const monthCount = {};
     data.forEach(item => {
         const date = item.日期 || '';
@@ -772,24 +747,20 @@ function generateTrendChart(data) {
         const month = date.substring(0, 7);
         monthCount[month] = (monthCount[month] || 0) + 1;
     });
-
     const sortedMonths = Object.keys(monthCount).sort();
     const values = sortedMonths.map(m => monthCount[m]);
     const labels = sortedMonths.map(m => {
         const parts = m.split('-');
         return parts[0] + '年' + parseInt(parts[1]) + '月';
     });
-
     const chartDom = document.getElementById('trendChart');
     if (!chartDom) return;
     const myChart = echarts.init(chartDom);
-
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const textColor = isDark ? '#b8d0e0' : '#1a3a4a';
     const axisColor = isDark ? '#2a4a5a' : '#c8dce8';
     const lineColor = '#4a9fc7';
     const areaColor = isDark ? 'rgba(74,159,199,0.25)' : 'rgba(74,159,199,0.20)';
-
     const option = {
         tooltip: {
             trigger: 'axis',
@@ -859,10 +830,8 @@ function generateTrendChart(data) {
             }
         }]
     };
-
     myChart.setOption(option);
     window.addEventListener('resize', function() { myChart.resize(); });
-
     const originalToggle = toggleTheme;
     toggleTheme = function() {
         originalToggle();
