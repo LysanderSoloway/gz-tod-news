@@ -160,7 +160,7 @@
         }
         .meta-bar .line b { color:var(--ink); font-weight:600; }
         .meta-bar .lead b { color:var(--ink-light); }
-        .stats { 
+                .stats { 
             max-width:1360px; 
             margin:28px auto 0; 
             padding:0 32px; 
@@ -195,15 +195,25 @@
             font-weight:500; 
             letter-spacing:0.2px; 
         }
+        /* 范围卡片数字颜色（只改数字颜色，背景保持白色） */
         .stat.scope-world .n { color:var(--stat-teal); }
         .stat.scope-national .n { color:var(--stat-red); }
         .stat.scope-gd .n { color:var(--stat-green); }
         .stat.scope-gz .n { color:var(--stat-orange); }
-        [data-theme="dark"] .stat .n { color:var(--stat-blue); }
         [data-theme="dark"] .stat.scope-world .n { color:var(--stat-teal); }
         [data-theme="dark"] .stat.scope-national .n { color:var(--stat-red); }
         [data-theme="dark"] .stat.scope-gd .n { color:var(--stat-green); }
         [data-theme="dark"] .stat.scope-gz .n { color:var(--stat-orange); }
+        /* 确保范围卡片背景保持白色 */
+        .stat.scope-world, .stat.scope-national, .stat.scope-gd, .stat.scope-gz {
+            background: var(--card);
+        }
+        [data-theme="dark"] .stat.scope-world,
+        [data-theme="dark"] .stat.scope-national,
+        [data-theme="dark"] .stat.scope-gd,
+        [data-theme="dark"] .stat.scope-gz {
+            background: var(--card);
+        }
         .chart-section { max-width:1360px; margin:28px auto 0; padding:0 32px; }
         .chart-title { 
             font-size:18px; 
