@@ -146,7 +146,7 @@ HISTORICAL_NEWS = [
 # 爬虫抓取新新闻
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！")
+    print("🤖 超级小机器人开始干活啦！（含新增新闻源）")
     all_news = []
 
     # 先加载历史数据
@@ -159,9 +159,10 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 新闻源列表
+    # 新闻源列表（已整合所有新增网站）
     # ============================================================
     sources = [
+        # ---- 原有稳定源 ----
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 15},
         {"name": "广州市规划局", "url": "https://ghzyj.gz.gov.cn/ywpd/cxgh/ghxkgsgb/", "scope": "广州市", "select": "ul.list li a", "limit": 10},
         {"name": "南方日报", "url": "https://news.nfnews.com/guangdong/", "scope": "广东省", "select": "a", "limit": 10},
@@ -178,6 +179,30 @@ def fetch_news():
         {"name": "广州市政府网", "url": "https://www.gz.gov.cn/zwgk/", "scope": "广州市", "select": "a", "limit": 10},
         {"name": "广州市发改委", "url": "https://fgw.gz.gov.cn/zwgk/", "scope": "广州市", "select": "a", "limit": 8},
         {"name": "广州市交通运输局", "url": "https://jtj.gz.gov.cn/", "scope": "广州市", "select": "a", "limit": 8},
+        # ---- 新增国内行业门户 ----
+        {"name": "轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "都市轨道交通网", "url": "https://www.rail-urban.com/news/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "铁路关注网", "url": "https://tlgz.org.cn/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "人民铁道网", "url": "https://www.peoplerail.com/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "中华铁道网", "url": "https://www.chnrailway.com/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 新增专业TOD/综合开发网站 ----
+        {"name": "中国国土经济学会TOD专委会", "url": "https://www.chinatod.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "国家TOD大数据监测评估平台", "url": "https://www.thegpsc.org/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "中国城市TOD大数据检测评估平台", "url": "https://www.cnfin.com/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 新增政策与官方信息平台 ----
+        {"name": "杭州市人民政府", "url": "https://www.hangzhou.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "沈阳市人民政府", "url": "https://www.shenyang.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "佛山市人民政府", "url": "https://www.foshan.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 新增普通新闻媒体 ----
+        {"name": "澎湃新闻", "url": "https://www.thepaper.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "人民网", "url": "http://finance.people.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "新华网", "url": "https://app.xinhuanet.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国城市报", "url": "https://www.zgcsb.com/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 新增国际新闻源 ----
+        {"name": "Global Railway Review", "url": "https://www.globalrailwayreview.com/", "scope": "世界", "select": "a", "limit": 6},
+        {"name": "NJTOD", "url": "https://www.njtod.org/category/tod-news-briefs/", "scope": "世界", "select": "a", "limit": 6},
+        {"name": "Vietnam.vn", "url": "https://www.vietnam.vn/", "scope": "世界", "select": "a", "limit": 6},
+        {"name": "ANTARA News", "url": "https://www.antaranews.com/", "scope": "世界", "select": "a", "limit": 6},
     ]
 
     keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站']
@@ -288,66 +313,6 @@ def fetch_news():
             print(f"✅ {src['name']} 新增 {count} 条")
         except Exception as e:
             print(f"❌ {src['name']} 出错: {e}")
-
-    # ============================================================
-    # 国际新闻源
-    # ============================================================
-    international_sources = [
-        {"name": "Railway Gazette", "url": "https://www.railwaygazette.com/", "select": "a", "limit": 6},
-        {"name": "International Railway Journal", "url": "https://www.railjournal.com/", "select": "a", "limit": 6},
-    ]
-
-    for src in international_sources:
-        try:
-            print(f"正在访问国际源 {src['name']}...")
-            r = requests.get(src['url'], headers=headers, timeout=15)
-            r.encoding = 'utf-8'
-            soup = BeautifulSoup(r.text, 'html.parser')
-            count = 0
-            for item in soup.select(src['select'])[:src['limit']]:
-                title = item.text.strip()
-                link = item.get('href')
-                if not title or not link or len(title) < 10:
-                    continue
-                if "监测月报" in title or "监测报告" in title:
-                    continue
-                if title[:20] in existing_titles:
-                    continue
-                if not any(k in title.lower() for k in ['rail', 'transit', 'metro', 'station', 'hub', 'tod']):
-                    continue
-                if not link.startswith('http'):
-                    if link.startswith('/'):
-                        base = src['url'].split('/')[0] + '//' + src['url'].split('/')[2]
-                        link = base + link
-                    else:
-                        link = src['url'].rstrip('/') + '/' + link.lstrip('/')
-
-                # 国际新闻默认为"世界"范围
-                keywords = []
-                for kw, words in {'国铁': ['rail'], '城际': ['intercity'], '地铁': ['metro'], '综合交通枢纽': ['hub', 'station'], '综合开发': ['development', 'TOD']}.items():
-                    for w in words:
-                        if w in title.lower():
-                            keywords.append(kw)
-                            break
-                if not keywords:
-                    keywords = ["轨道"]
-
-                all_news.append({
-                    "日期": datetime.now().strftime("%Y-%m-%d"),
-                    "标题": title[:150],
-                    "链接": link,
-                    "来源": src['name'],
-                    "范围": "世界",
-                    "关键词": keywords,
-                    "摘要": title[:80] + ("..." if len(title) > 80 else ""),
-                    "类型": "综合"
-                })
-                existing_titles.add(title[:20])
-                count += 1
-                new_count += 1
-            print(f"✅ 国际源 {src['name']} 新增 {count} 条")
-        except Exception as e:
-            print(f"❌ 国际源 {src['name']} 出错: {e}")
 
     # ============================================================
     # 按日期从新到旧排序
