@@ -47,24 +47,7 @@
             --badge-national-bg: #f5e4e0;
             --badge-guangdong-bg: #e0f0e8;
             --badge-guangzhou-bg: #f5ece0;
-            --stat-blue: #1a5a7a;
-            --stat-red: #c05a4a;
-            --stat-green: #4a9a7a;
-            --stat-orange: #c08a4a;
-            --stat-purple: #7a5a9a;
-            --stat-teal: #3a8a9a;
-            --stat-gray: #4a6a7a;
-            /* 卡片装饰条颜色 */
-            --card-accent-1: #3b82f6;
-            --card-accent-2: #10b981;
-            --card-accent-3: #f59e0b;
-            --card-accent-4: #ec4899;
-            --card-accent-5: #8b5cf6;
-            --card-accent-6: #06b6d4;
-            --card-accent-world: #3a8a9a;
-            --card-accent-national: #c05a4a;
-            --card-accent-gd: #4a9a7a;
-            --card-accent-gz: #c08a4a;
+            --stat-color: #1a3a4a;
         }
         [data-theme="dark"] {
             --primary: #7abdd5;
@@ -105,23 +88,7 @@
             --badge-national-bg: #3a2a1a;
             --badge-guangdong-bg: #1a3a2a;
             --badge-guangzhou-bg: #3a3a1a;
-            --stat-blue: #7abdd5;
-            --stat-red: #d98a7a;
-            --stat-green: #7abaa0;
-            --stat-orange: #d0aa6a;
-            --stat-purple: #a08ac0;
-            --stat-teal: #6aaaaa;
-            --stat-gray: #7a9aaa;
-            --card-accent-1: #60a5fa;
-            --card-accent-2: #34d399;
-            --card-accent-3: #fbbf24;
-            --card-accent-4: #f472b6;
-            --card-accent-5: #a78bfa;
-            --card-accent-6: #22d3ee;
-            --card-accent-world: #6aaaaa;
-            --card-accent-national: #d98a7a;
-            --card-accent-gd: #7abaa0;
-            --card-accent-gz: #d0aa6a;
+            --stat-color: #b8d0e0;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -232,32 +199,16 @@
             text-align:center;
             box-shadow:var(--shadow-sm);
             transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position:relative;
-            overflow:hidden;
-        }
-        .stat::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--stat-blue);
-            opacity: 0.5;
-            transition:opacity 0.3s;
         }
         .stat:hover {
             transform:translateY(-3px);
             box-shadow:var(--shadow);
             border-color:var(--accent);
         }
-        .stat:hover::before {
-            opacity: 1;
-        }
         .stat .n {
             font-size:24px;
             font-weight:700;
-            color:var(--stat-blue);
+            color:var(--stat-color);
             line-height:1.2;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, monospace;
             letter-spacing:-0.5px;
@@ -269,29 +220,6 @@
             font-weight:500;
             letter-spacing:0.2px;
         }
-        /* 卡片装饰条颜色 */
-        .stat.type-1::before { background: var(--card-accent-1); }
-        .stat.type-2::before { background: var(--card-accent-2); }
-        .stat.type-3::before { background: var(--card-accent-3); }
-        .stat.type-4::before { background: var(--card-accent-4); }
-        .stat.type-5::before { background: var(--card-accent-5); }
-        .stat.type-6::before { background: var(--card-accent-6); }
-        .stat.scope-world::before { background: var(--card-accent-world); }
-        .stat.scope-national::before { background: var(--card-accent-national); }
-        .stat.scope-gd::before { background: var(--card-accent-gd); }
-        .stat.scope-gz::before { background: var(--card-accent-gz); }
-        .stat .n { transition: color 0.3s; }
-        .stat.type-1 .n { color: var(--card-accent-1); }
-        .stat.type-2 .n { color: var(--card-accent-2); }
-        .stat.type-3 .n { color: var(--card-accent-3); }
-        .stat.type-4 .n { color: var(--card-accent-4); }
-        .stat.type-5 .n { color: var(--card-accent-5); }
-        .stat.type-6 .n { color: var(--card-accent-6); }
-        .stat.scope-world .n { color: var(--card-accent-world); }
-        .stat.scope-national .n { color: var(--card-accent-national); }
-        .stat.scope-gd .n { color: var(--card-accent-gd); }
-        .stat.scope-gz .n { color: var(--card-accent-gz); }
-        .stat .l { font-size:11px; color:var(--muted); margin-top:3px; font-weight:500; letter-spacing:0.2px; }
         @media(max-width:640px) {
             .stats { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; }
             .stat { padding:10px 8px; }
@@ -728,26 +656,24 @@ function generateStats(data) {
 
     // 类型卡片
     const typeLabels = ['项目建设进展', '规划公示/获批', '政策/行业观点', '商业配套/招商', '投融资', '可持续经营运营'];
-    const typeClasses = ['type-1', 'type-2', 'type-3', 'type-4', 'type-5', 'type-6'];
     const containerType = document.getElementById('statsType');
     containerType.innerHTML = '';
-    typeLabels.forEach((label, idx) => {
+    typeLabels.forEach((label) => {
         const val = typeCount[label] || 0;
         const div = document.createElement('div');
-        div.className = `stat ${typeClasses[idx]}`;
+        div.className = 'stat';
         div.innerHTML = `<div class="n" data-target="${val}">0</div><div class="l">${label}</div>`;
         containerType.appendChild(div);
     });
 
     // 范围卡片
     const scopeLabels = ['世界', '全国', '广东省', '广州市'];
-    const scopeClasses = ['scope-world', 'scope-national', 'scope-gd', 'scope-gz'];
     const containerScope = document.getElementById('statsScope');
     containerScope.innerHTML = '';
-    scopeLabels.forEach((label, idx) => {
+    scopeLabels.forEach((label) => {
         const val = scopeCount[label] || 0;
         const div = document.createElement('div');
-        div.className = `stat ${scopeClasses[idx]}`;
+        div.className = 'stat';
         const emoji = label === '世界' ? '🌐' : label === '全国' ? '🇨🇳' : label === '广东省' ? '📗' : '📙';
         div.innerHTML = `<div class="n" data-target="${val}">0</div><div class="l">${emoji} ${label}范围</div>`;
         containerScope.appendChild(div);
