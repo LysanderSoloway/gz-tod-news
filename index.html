@@ -48,6 +48,8 @@
             --badge-guangdong-bg: #e0f0e8;
             --badge-guangzhou-bg: #f5ece0;
             --stat-color: #1a3a4a;
+            --tag-bg: #dce8f0;
+            --tag-color: #1a5a7a;
         }
         [data-theme="dark"] {
             --primary: #7abdd5;
@@ -89,13 +91,15 @@
             --badge-guangdong-bg: #1a3a2a;
             --badge-guangzhou-bg: #3a3a1a;
             --stat-color: #b8d0e0;
+            --tag-bg: #1a2a4a;
+            --tag-color: #7abdd5;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
             background: var(--bg);
             color: var(--ink);
-            line-height:1.6;
+            line-height:1.7;
             transition:background 0.3s, color 0.3s;
         }
         .hero {
@@ -303,7 +307,7 @@
             background:var(--card);
             border:1px solid var(--border);
             border-radius:var(--radius);
-            padding:18px 20px;
+            padding:16px 18px;
             box-shadow:var(--shadow-sm);
             transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display:flex;
@@ -318,7 +322,7 @@
             display:flex;
             justify-content:space-between;
             align-items:center;
-            margin-bottom:10px;
+            margin-bottom:8px;
         }
         .quarter-label {
             font-weight:700;
@@ -329,41 +333,35 @@
             background:var(--primary);
             color:#fff;
             border-radius:20px;
-            padding:4px 14px;
-            font-size:12px;
+            padding:3px 12px;
+            font-size:11px;
             font-weight:600;
+            white-space:nowrap;
         }
         [data-theme="dark"] .quarter-count {
             background: var(--accent);
             color: #fff;
         }
-        .quarter-detail {
-            font-size:11.5px;
-            color:var(--muted);
-            margin-bottom:8px;
-            line-height:1.5;
-        }
-        .quarter-info-divider {
-            border-top: 1px solid var(--border);
-            margin: 8px 0 10px 0;
-            opacity: 0.4;
-        }
-        .quarter-info-row {
-            font-size: 12.5px;
-            color: var(--ink);
-            line-height: 1.7;
-            padding: 2px 0;
-        }
-        .quarter-summary {
+        .quarter-summary-text {
             font-size:12.5px;
             color:var(--ink);
             line-height:1.75;
-            padding:10px 14px;
+            padding:10px 12px;
             background:var(--summary-bg);
-            border-radius:8px;
-            border-left:4px solid var(--accent);
-            flex:1;
+            border-radius:6px;
+            border-left:3px solid var(--accent);
             transition:background 0.3s;
+            flex:1;
+        }
+        .quarter-summary-text .highlight {
+            color:var(--accent);
+            font-weight:600;
+        }
+        .quarter-empty {
+            font-size:12px;
+            color:var(--muted);
+            padding:6px 0;
+            font-style:italic;
         }
         @media(max-width:1200px) { .quarterly-grid { grid-template-columns:repeat(2, 1fr); } }
         @media(max-width:640px) { .quarterly-grid { grid-template-columns:1fr; } }
@@ -583,9 +581,8 @@
 <div class="quarterly-section"><div class="quarterly-title">📝 季度新闻总结</div><div class="quarterly-grid" id="quarterlyGrid"></div></div>
 <div class="toolbar"><input type="text" placeholder="🔍 搜索标题、媒体、关键词..." id="searchInput" onkeyup="filterTable()"/><select id="scopeFilter" onchange="filterTable()"><option value="all">全部范围</option><option value="世界">🌐 世界</option><option value="全国">🇨🇳 全国</option><option value="广东省">📗 广东省</option><option value="广州市">📙 广州市</option></select><select id="keywordFilter" onchange="filterTable()"><option value="all">全部关键词</option><option value="国铁">国铁</option><option value="城际">城际</option><option value="地铁">地铁</option><option value="轨道">轨道</option><option value="综合交通枢纽">综合交通枢纽</option><option value="综合开发">综合开发</option><option value="投融资">投融资</option><option value="可持续经营运营">可持续经营运营</option></select><span class="count-tip" id="countTip">共 0 条</span></div>
 <div class="table-wrap"><div class="scroll-box"><table><thead><tr><th class="num">#</th><th>日期</th><th class="scope-col">范围</th><th>标题</th><th>媒体/来源</th><th>关键词</th><th>摘要</th></tr></thead><tbody id="newsTable"><tr><td colspan="7" class="loading">⏳ 正在读取新闻数据...</td></tr></tbody></table></div></div>
-<footer><p>轨道交通综合开发新闻报道监测 · 数据由小机器人每周一自动抓取 🤖</p></footer>
+<footer><p>轨道交通综合开发新闻报道监测 · 数据由小机器人每周一自动抓取</p></footer>
 <script>
-// 数字滚动动画
 function animateNumber(el, target, duration) {
     if (!el) return;
     const start = 0;
@@ -636,7 +633,6 @@ function renderNews(data) {
 function generateStats(data) {
     if (!data || data.length === 0) { return; }
 
-    // 统计分类
     const typeCount = {
         '项目建设进展': 0,
         '规划公示/获批': 0,
@@ -654,7 +650,6 @@ function generateStats(data) {
         if (scopeCount[scope] !== undefined) scopeCount[scope] = (scopeCount[scope] || 0) + 1;
     });
 
-    // 类型卡片
     const typeLabels = ['项目建设进展', '规划公示/获批', '政策/行业观点', '商业配套/招商', '投融资', '可持续经营运营'];
     const containerType = document.getElementById('statsType');
     containerType.innerHTML = '';
@@ -666,7 +661,6 @@ function generateStats(data) {
         containerType.appendChild(div);
     });
 
-    // 范围卡片
     const scopeLabels = ['世界', '全国', '广东省', '广州市'];
     const containerScope = document.getElementById('statsScope');
     containerScope.innerHTML = '';
@@ -679,7 +673,6 @@ function generateStats(data) {
         containerScope.appendChild(div);
     });
 
-    // 触发数字动画
     setTimeout(() => {
         document.querySelectorAll('#statsType .n, #statsScope .n').forEach(el => {
             const target = parseInt(el.getAttribute('data-target')) || 0;
@@ -999,63 +992,120 @@ function generateQuarterlySummary(data) {
         return qb - qa;
     });
 
-    sortedKeys.forEach(key => {
-        const d = qMap[key];
-        const scopes = Array.from(d.scopes).join(' · ');
+    const endings = [
+        '总体来看，本季度轨道交通综合开发呈现稳步推进态势。',
+        '整体而言，轨道交通综合开发各项工作有序推进。',
+        '综合来看，本季度行业发展态势良好，综合开发持续深化。',
+        '总的来看，轨道交通综合开发领域保持活跃发展势头。'
+    ];
 
-        const projects = Array.from(d.projects);
-        let projectHtml = '';
-        if (projects.length > 0) {
-            const projectList = projects.slice(0, 3).join(' · ');
-            projectHtml = `<div class="quarter-info-row">🏗️ 核心项目：${projectList}</div>`;
+    sortedKeys.forEach((key, idx) => {
+        const d = qMap[key];
+        const scopes = Array.from(d.scopes);
+
+        // 构建覆盖范围描述
+        let scopeStr = '';
+        if (scopes.length === 1) {
+            scopeStr = scopes[0];
+        } else if (scopes.length === 2) {
+            scopeStr = scopes.join('及');
+        } else {
+            const last = scopes.pop();
+            scopeStr = scopes.join('、') + '及' + last;
         }
 
+        // 构建项目描述
+        const projects = Array.from(d.projects);
+        let projectStr = '';
+        if (projects.length === 1) {
+            projectStr = projects[0];
+        } else if (projects.length === 2) {
+            projectStr = projects.join('、');
+        } else if (projects.length >= 3) {
+            projectStr = projects.slice(0, 3).join('、') + '等';
+        }
+
+        // 统计类型
         const typeCount = {};
         d.types.forEach(t => { typeCount[t] = (typeCount[t] || 0) + 1; });
-        const sortedTypes = Object.entries(typeCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        let typeHtml = '';
-        if (sortedTypes.length > 0) {
-            const typeStr = sortedTypes.map(([t, count]) => `${t} ${count}条`).join(' · ');
-            typeHtml = `<div class="quarter-info-row">📌 主要动态：${typeStr}</div>`;
+        const sortedTypes = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
+
+        // 构建动态描述
+        let typeStr = '';
+        if (sortedTypes.length === 1) {
+            const short = sortedTypes[0][0].replace('规划公示/获批', '规划获批').replace('项目建设进展', '建设进展').replace('政策/行业观点', '政策').replace('商业配套/招商', '商业招商');
+            typeStr = `${short}类新闻${sortedTypes[0][1]}条`;
+        } else if (sortedTypes.length >= 2) {
+            const parts = sortedTypes.slice(0, 2).map(([t, c]) => {
+                const short = t.replace('规划公示/获批', '规划获批').replace('项目建设进展', '建设进展').replace('政策/行业观点', '政策').replace('商业配套/招商', '商业招商');
+                return `${short}类${c}条`;
+            });
+            typeStr = parts.join('、');
+            if (sortedTypes.length > 2) {
+                const rest = sortedTypes.slice(2).reduce((sum, [, c]) => sum + c, 0);
+                typeStr += `，其他类别共${rest}条`;
+            }
         }
 
+        // 关键词
         const kwCount = {};
         d.keywords.forEach(kw => { kwCount[kw] = (kwCount[kw] || 0) + 1; });
-        const sortedKw = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        let kwHtml = '';
-        if (sortedKw.length > 0) {
-            const kwStr = sortedKw.map(([kw]) => kw).join(' · ');
-            kwHtml = `<div class="quarter-info-row">🏷️ 热门关键词：${kwStr}</div>`;
-        }
+        const sortedKw = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        let kwStr = sortedKw.map(([kw]) => kw).join('、');
 
+        // 来源
         const sourceCount = {};
         d.sources.forEach(s => { sourceCount[s] = (sourceCount[s] || 0) + 1; });
         const sortedSources = Object.entries(sourceCount).sort((a, b) => b[1] - a[1]).slice(0, 2);
-        let sourceHtml = '';
-        if (sortedSources.length > 0) {
-            const sourceStr = sortedSources.map(([s]) => s).join(' · ');
-            sourceHtml = `<div class="quarter-info-row">📰 主要来源：${sourceStr}</div>`;
+        let sourceStr = sortedSources.map(([s]) => s).join('和');
+
+        // ===== 组装摘要文字 =====
+        const year = key.split('年')[0];
+        const quarterNum = key.replace(year + '年Q', '');
+        const quarterMap = {'1': '第一', '2': '第二', '3': '第三', '4': '第四'};
+        const quarterText = quarterMap[quarterNum] || quarterNum;
+
+        let summary = `${year}年${quarterText}季度，${scopeStr}轨道交通综合开发领域共收录${d.count}条新闻。`;
+
+        if (projectStr) {
+            summary += ` 本季度核心项目包括${projectStr}`;
+            if (sortedTypes.length > 0) {
+                const topType = sortedTypes[0][0];
+                if (topType.includes('进展') || topType.includes('建设')) {
+                    summary += `，${topType.replace('项目建设进展', '建设进展类')}新闻${sortedTypes[0][1]}条，表明该季度项目推进较为活跃`;
+                } else if (topType.includes('规划')) {
+                    summary += `，${topType.replace('规划公示/获批', '规划获批类')}新闻${sortedTypes[0][1]}条，多个项目方案获得通过`;
+                } else if (topType.includes('投融资')) {
+                    summary += `，${topType}类新闻${sortedTypes[0][1]}条，轨道交通项目获得资金支持`;
+                } else if (topType.includes('政策')) {
+                    summary += `，${topType.replace('政策/行业观点', '政策类')}新闻${sortedTypes[0][1]}条，指导意见密集出台`;
+                } else if (topType.includes('商业')) {
+                    summary += `，${topType.replace('商业配套/招商', '商业招商类')}新闻${sortedTypes[0][1]}条，TOD商业配套持续推进`;
+                } else {
+                    summary += `，${topType}类新闻${sortedTypes[0][1]}条`;
+                }
+            }
+            summary += '。';
+        } else if (typeStr) {
+            summary += ` 本季度${typeStr}。`;
+        } else {
+            summary += ' 本季度新闻类型分布较为均衡。';
         }
 
-        let summary = '本季度轨道交通综合开发稳步推进。';
-        const allText = d.titles.join('。') + d.types.join('、');
-        if (allText.includes('封顶') || allText.includes('开工') || allText.includes('竣工') || allText.includes('通车')) {
-            summary = '本季度多个项目取得阶段性进展，建设活动保持活跃。';
-        } else if (allText.includes('规划') || allText.includes('公示') || allText.includes('获批')) {
-            summary = '本季度规划审批类新闻较多，多个项目方案获得通过。';
-        } else if (allText.includes('投资') || allText.includes('融资') || allText.includes('资金')) {
-            summary = '本季度投融资活动活跃，多项轨道交通项目获得资金支持。';
-        } else if (allText.includes('政策') || allText.includes('出台') || allText.includes('发布')) {
-            summary = '本季度政策动态密集，多项指导意见与管理办法出台。';
-        } else if (allText.includes('商业') || allText.includes('招商')) {
-            summary = '本季度商业配套与招商活动持续推进，TOD综合开发成效显著。';
+        if (kwStr) {
+            summary += ` ${kwStr}是关注度最高的方向`;
+            if (sourceStr) {
+                summary += `，新闻主要来源于${sourceStr}`;
+            }
+            summary += '。';
+        } else if (sourceStr) {
+            summary += ` 新闻主要来源于${sourceStr}。`;
         }
 
-        let infoRows = projectHtml + typeHtml + kwHtml + sourceHtml;
-        if (!infoRows) {
-            infoRows = `<div class="quarter-info-row" style="color:var(--muted);">暂无详细分类数据</div>`;
-        }
+        // 加一句总括
+        summary += ' ' + endings[idx % endings.length];
 
+        // ===== 构建卡片 =====
         const div = document.createElement('div');
         div.className = 'quarter-card';
         div.innerHTML = `
@@ -1063,11 +1113,7 @@ function generateQuarterlySummary(data) {
                 <span class="quarter-label">📊 ${key}</span>
                 <span class="quarter-count">${d.count} 条</span>
             </div>
-            <div class="quarter-detail">📍 覆盖范围：${scopes}</div>
-            <div class="quarter-info-divider"></div>
-            ${infoRows}
-            <div class="quarter-info-divider"></div>
-            <div class="quarter-summary">💡 ${summary}</div>
+            <div class="quarter-summary-text">${summary}</div>
         `;
         container.appendChild(div);
     });
