@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>轨道交通综合开发新闻报道监测</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2/dist/echarts-wordcloud.min.js"></script>
     <style>
         :root {
             --primary: #1a5a7a;
@@ -552,16 +551,6 @@
             border:1px solid var(--border);
         }
         .empty-msg { text-align:center; padding:40px; color:var(--muted); font-size:16px; }
-        /* 词云图容器特殊样式 */
-        #wordCloudChart {
-            width: 100%;
-            height: 280px;
-        }
-        @media(max-width:640px) {
-            #wordCloudChart {
-                height: 200px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -570,18 +559,7 @@
 <div class="hero"><div class="inner"><h1>轨道交通综合开发新闻报道监测</h1><span class="code">国铁 · 城际 · 地铁 · 轨道 · 综合交通枢纽 · 综合开发 · 投融资 · 可持续经营运营</span><p>本页数据由小机器人每周一自动抓取更新 🤖</p></div></div>
 <div class="meta-bar"><div class="inner"><div class="line"><b>监测范围：</b>世界 · 中国 · 广东省 · 广州市 四级轨道交通综合开发</div><div class="line lead"><b>关键领域：</b>国铁综合开发 · 城际轨道投融资 · 地铁TOD · 轨道可持续经营 · 综合交通枢纽站城融合 · 场站综合体综合开发</div><div class="line"><b>最近更新：</b> <span id="lastUpdate">加载中...</span> · <b>收录报道：</b><span id="totalCount">0</span> 条</div></div></div>
 <div class="stats" id="statsContainer"></div>
-<div class="chart-section">
-    <div class="chart-title">📊 数据图表总结</div>
-    <!-- 词云图（新增） -->
-    <div class="chart-panel" style="margin-bottom:16px;padding:10px;">
-        <h3 style="padding:0 14px;margin-bottom:8px;">☁️ 热门关键词词云</h3>
-        <div id="wordCloudChart"></div>
-    </div>
-    <div class="chart-grid">
-        <div class="chart-panel" id="mediaChart"><h3>📰 媒体来源分布</h3></div>
-        <div class="chart-panel" id="keywordChart"><h3>🏷️ 关键词热度统计</h3></div>
-    </div>
-</div>
+<div class="chart-section"><div class="chart-title">📊 数据图表总结</div><div class="chart-grid"><div class="chart-panel" id="mediaChart"><h3>📰 媒体来源分布</h3></div><div class="chart-panel" id="keywordChart"><h3>🏷️ 关键词热度统计</h3></div></div></div>
 <!-- 新闻趋势图 -->
 <div class="chart-section" style="margin-top: 20px;">
     <div class="chart-title">📈 新闻月度趋势</div>
@@ -716,6 +694,7 @@ function generateCharts(data) {
         return '其他';
     }
 
+    // 高对比度多彩调色板
     const colorPalette = [
         '#1a6a7a', '#c05a3a', '#2a6ab0', '#3a9a6a',
         '#8a5aaa', '#d08a2a', '#a06a5a', '#b84a6a'
@@ -749,6 +728,7 @@ function generateCharts(data) {
         `;
     });
 
+    // 关键词统计
     const kwMap = {};
     data.forEach(item => {
         (item.关键词 || []).forEach(kw => {
@@ -894,81 +874,6 @@ function generateTrendChart(data) {
     };
 }
 
-function generateWordCloud(data) {
-    if (!data || data.length === 0) return;
-
-    const kwCount = {};
-    data.forEach(item => {
-        (item.关键词 || []).forEach(kw => {
-            kwCount[kw] = (kwCount[kw] || 0) + 1;
-        });
-    });
-
-    const wordData = Object.entries(kwCount).map(([name, value]) => ({ name, value }));
-    wordData.sort((a, b) => b.value - a.value);
-    const topWords = wordData.slice(0, 35);
-
-    if (topWords.length === 0) return;
-
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const chartDom = document.getElementById('wordCloudChart');
-    if (!chartDom) return;
-    const myChart = echarts.init(chartDom);
-
-    const option = {
-        tooltip: {
-            trigger: 'item',
-            formatter: function(params) {
-                return `<strong>${params.name}</strong><br/>出现次数：<strong>${params.value}</strong> 次`;
-            },
-            backgroundColor: isDark ? '#1a2a3a' : '#ffffff',
-            borderColor: isDark ? '#2a4a5a' : '#c8dce8',
-            textStyle: { color: isDark ? '#d5dce3' : '#1a3a4a' }
-        },
-        series: [{
-            type: 'wordCloud',
-            gridSize: 12,
-            sizeRange: [14, 48],
-            rotationRange: [-45, 45],
-            shape: 'circle',
-            width: '100%',
-            height: '100%',
-            textStyle: {
-                color: function() {
-                    const colors = [
-                        '#1a5a7a', '#2a7a9a', '#3a8aaa', '#4a9fc7',
-                        '#5ab0d5', '#7abdd5', '#9ad0e5', '#6a9fc7'
-                    ];
-                    return colors[Math.floor(Math.random() * colors.length)];
-                },
-                fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
-                fontWeight: 600
-            },
-            data: topWords
-        }]
-    };
-
-    myChart.setOption(option);
-    window.addEventListener('resize', function() {
-        myChart.resize();
-    });
-
-    const originalToggle = toggleTheme;
-    toggleTheme = function() {
-        originalToggle();
-        setTimeout(() => {
-            const isDarkNow = document.documentElement.getAttribute('data-theme') === 'dark';
-            myChart.setOption({
-                tooltip: {
-                    backgroundColor: isDarkNow ? '#1a2a3a' : '#ffffff',
-                    borderColor: isDarkNow ? '#2a4a5a' : '#c8dce8',
-                    textStyle: { color: isDarkNow ? '#d5dce3' : '#1a3a4a' }
-                }
-            });
-        }, 50);
-    };
-}
-
 function generateQuarterlySummary(data) {
     if (!data || data.length === 0) return;
 
@@ -1046,6 +951,7 @@ function generateQuarterlySummary(data) {
         const d = qMap[key];
         const scopes = Array.from(d.scopes).join(' · ');
 
+        // 核心项目
         const projects = Array.from(d.projects);
         let projectHtml = '';
         if (projects.length > 0) {
@@ -1053,6 +959,7 @@ function generateQuarterlySummary(data) {
             projectHtml = `<div class="quarter-info-row">🏗️ 核心项目：${projectList}</div>`;
         }
 
+        // 主要动态
         const typeCount = {};
         d.types.forEach(t => { typeCount[t] = (typeCount[t] || 0) + 1; });
         const sortedTypes = Object.entries(typeCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -1062,6 +969,7 @@ function generateQuarterlySummary(data) {
             typeHtml = `<div class="quarter-info-row">📌 主要动态：${typeStr}</div>`;
         }
 
+        // 热门关键词
         const kwCount = {};
         d.keywords.forEach(kw => { kwCount[kw] = (kwCount[kw] || 0) + 1; });
         const sortedKw = Object.entries(kwCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -1071,6 +979,7 @@ function generateQuarterlySummary(data) {
             kwHtml = `<div class="quarter-info-row">🏷️ 热门关键词：${kwStr}</div>`;
         }
 
+        // 主要来源
         const sourceCount = {};
         d.sources.forEach(s => { sourceCount[s] = (sourceCount[s] || 0) + 1; });
         const sortedSources = Object.entries(sourceCount).sort((a, b) => b[1] - a[1]).slice(0, 2);
@@ -1080,6 +989,7 @@ function generateQuarterlySummary(data) {
             sourceHtml = `<div class="quarter-info-row">📰 主要来源：${sourceStr}</div>`;
         }
 
+        // 生成总结句
         let summary = '本季度轨道交通综合开发稳步推进。';
         const allText = d.titles.join('。') + d.types.join('、');
         if (allText.includes('封顶') || allText.includes('开工') || allText.includes('竣工') || allText.includes('通车')) {
@@ -1184,7 +1094,6 @@ window.onload = function() {
             generateStats(data);
             generateCharts(data);
             generateTrendChart(data);
-            generateWordCloud(data);
             generateQuarterlySummary(data);
             filterTable();
         })
