@@ -146,63 +146,35 @@ HISTORICAL_NEWS = [
 # 爬虫抓取新新闻
 # ============================================================
 def fetch_news():
-    print("🤖 超级小机器人开始干活啦！（含新增新闻源）")
+    print("🤖 小机器人开始干活啦！（全国精选版）")
     all_news = []
 
     # 先加载历史数据
     all_news.extend(HISTORICAL_NEWS)
     print(f"📚 加载历史新闻 {len(HISTORICAL_NEWS)} 条")
 
-    # 建立已有标题索引（用于去重）
+    # 建立已有标题索引
     existing_titles = {item["标题"][:20] for item in all_news}
     new_count = 0
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 新闻源列表（已整合所有新增网站）
+    # 精选8个标志性网站（覆盖全国四大区域）
     # ============================================================
     sources = [
-        # ---- 原有稳定源 ----
-        {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 15},
-        {"name": "广州市规划局", "url": "https://ghzyj.gz.gov.cn/ywpd/cxgh/ghxkgsgb/", "scope": "广州市", "select": "ul.list li a", "limit": 10},
-        {"name": "南方日报", "url": "https://news.nfnews.com/guangdong/", "scope": "广东省", "select": "a", "limit": 10},
-        {"name": "广州日报（大洋网）", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
+        # ---- 全国性行业门户 ----
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中国交通报", "url": "https://www.zgjtb.com/", "scope": "全国", "select": "a", "limit": 8},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/news/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "中国经济新闻网", "url": "https://www.cet.com.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "21世纪经济报道", "url": "https://www.21jingji.com/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "每日经济新闻", "url": "https://www.nbd.com.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "深圳市交通运输局", "url": "https://jtys.sz.gov.cn/", "scope": "广东省", "select": "a", "limit": 8},
-        {"name": "广东省交通运输厅", "url": "https://td.gd.gov.cn/", "scope": "广东省", "select": "a", "limit": 8},
-        {"name": "广州市政府网", "url": "https://www.gz.gov.cn/zwgk/", "scope": "广州市", "select": "a", "limit": 10},
-        {"name": "广州市发改委", "url": "https://fgw.gz.gov.cn/zwgk/", "scope": "广州市", "select": "a", "limit": 8},
-        {"name": "广州市交通运输局", "url": "https://jtj.gz.gov.cn/", "scope": "广州市", "select": "a", "limit": 8},
-        # ---- 新增国内行业门户 ----
-        {"name": "轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "都市轨道交通网", "url": "https://www.rail-urban.com/news/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "铁路关注网", "url": "https://tlgz.org.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "人民铁道网", "url": "https://www.peoplerail.com/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "中华铁道网", "url": "https://www.chnrailway.com/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 新增专业TOD/综合开发网站 ----
-        {"name": "中国国土经济学会TOD专委会", "url": "https://www.chinatod.com.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "国家TOD大数据监测评估平台", "url": "https://www.thegpsc.org/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "中国城市TOD大数据检测评估平台", "url": "https://www.cnfin.com/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 新增政策与官方信息平台 ----
-        {"name": "杭州市人民政府", "url": "https://www.hangzhou.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "沈阳市人民政府", "url": "https://www.shenyang.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "佛山市人民政府", "url": "https://www.foshan.gov.cn/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 新增普通新闻媒体 ----
-        {"name": "澎湃新闻", "url": "https://www.thepaper.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "人民网", "url": "http://finance.people.com.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "新华网", "url": "https://app.xinhuanet.com/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中国城市报", "url": "https://www.zgcsb.com/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 新增国际新闻源 ----
-        {"name": "Global Railway Review", "url": "https://www.globalrailwayreview.com/", "scope": "世界", "select": "a", "limit": 6},
-        {"name": "NJTOD", "url": "https://www.njtod.org/category/tod-news-briefs/", "scope": "世界", "select": "a", "limit": 6},
-        {"name": "Vietnam.vn", "url": "https://www.vietnam.vn/", "scope": "世界", "select": "a", "limit": 6},
-        {"name": "ANTARA News", "url": "https://www.antaranews.com/", "scope": "世界", "select": "a", "limit": 6},
+        # ---- 华北 ----
+        {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 华东 ----
+        {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 8},
+        # ---- 华南 ----
+        {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 8},
+        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 8},
+        # ---- 西南 ----
+        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 8},
     ]
 
     keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站']
