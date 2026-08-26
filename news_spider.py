@@ -167,33 +167,34 @@ def fetch_news():
     # 数据源列表（20个精选网站，覆盖全国主要区域）
     # ============================================================
     sources = [
-        # ---- 全国性行业门户（4个） ----
+        # ---- 全国性行业门户（7个） ----
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
-        {"name": "人民铁道报", "url": "https://peoplerail.com/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 华北（2个） ----
+        {"name": "人民铁道网", "url": "https://www.peoplerail.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国交通新闻网", "url": "https://www.zgjtb.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国城市轨道交通网", "url": "https://www.chinametro.net/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 华北（3个） ----
         {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "铁路关注网", "url": "https://tlgz.org.cn/", "scope": "全国", "select": "a", "limit": 10},
         # ---- 华东（4个） ----
         {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "象山县人民政府", "url": "https://xiangshan.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "无锡地铁", "url": "https://wxjkq.wuxi.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "杭州网", "url": "https://www.hangzhou.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "高铁网", "url": "https://news.gaotie.cn/", "scope": "全国", "select": "a", "limit": 10},
         # ---- 华南（3个） ----
         {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
-        # ---- 西南（3个） ----
-        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "人民网-四川频道", "url": "https://sc.people.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 西南（2个） ----
         {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 西北（2个） ----
+        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 西北（1个） ----
         {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中国甘肃网", "url": "https://gansu.gscn.com.cn/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 东北（2个） ----
+        # ---- 东北（1个） ----
         {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中国吉林网", "url": "https://news.cnjiwang.com/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
     keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体']
