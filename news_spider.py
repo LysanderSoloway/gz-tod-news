@@ -1,10 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import time
 from datetime import datetime
 
 # ============================================================
-# 历史新闻数据（从您之前的 index.html 中提取，共133条）
+# 历史新闻数据（共133条）
 # ============================================================
 HISTORICAL_NEWS = [
     {"日期": "2025-03-12", "标题": "欧盟投入500亿欧元推进跨境铁路网建设", "链接": "https://www.railjournal.com/eu-approves-50bn-cross-border-rail-investment/", "来源": "欧盟委员会", "范围": "世界", "关键词": ["国铁"], "摘要": "500亿欧元基金支持跨境高铁走廊。", "类型": "投融资"},
@@ -143,63 +144,67 @@ HISTORICAL_NEWS = [
 ]
 
 # ============================================================
-# 爬虫抓取新新闻
+# 爬虫主函数
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（全国精选版）")
-    all_news = []
+    print("🤖 小机器人开始干活啦！（增强版）")
 
-    # 先加载历史数据
-    all_news.extend(HISTORICAL_NEWS)
-    print(f"📚 加载历史新闻 {len(HISTORICAL_NEWS)} 条")
+    # 尝试加载已有数据（优先从文件加载，避免覆盖已有的新数据）
+    try:
+        with open('news_data.json', 'r', encoding='utf-8') as f:
+            all_news = json.load(f)
+            print(f"📚 加载现有数据 {len(all_news)} 条")
+    except:
+        # 如果文件不存在，使用内置历史数据
+        all_news = HISTORICAL_NEWS.copy()
+        print(f"📚 使用内置历史数据 {len(all_news)} 条")
 
-    # 建立已有标题索引
-    existing_titles = {item["标题"][:20] for item in all_news}
+    # 建立去重索引
+    existing_titles = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     new_count = 0
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 精选8个标志性网站（覆盖全国四大区域）
+    # 数据源列表（12个精选网站）
     # ============================================================
     sources = [
-        # ---- 全国性行业门户 ----
-        {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 华北 ----
-        {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 华东 ----
-        {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 8},
-        {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 8},
-        # ---- 华南 ----
-        {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 8},
-        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 8},
-        # ---- 西南 ----
-        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 8},
+        {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a[title]", "limit": 12},
+        {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
+        {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 10},
+        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
+        {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
+        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
-    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站']
+    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段']
 
     for src in sources:
         try:
             print(f"正在访问 {src['name']}...")
-            r = requests.get(src['url'], headers=headers, timeout=12)
+            r = requests.get(src['url'], headers=headers, timeout=15)
             r.encoding = 'utf-8'
             soup = BeautifulSoup(r.text, 'html.parser')
+            items = soup.select(src['select'])
+            if not items:
+                print(f"⚠️ {src['name']} 无匹配链接")
+                continue
             count = 0
-
-            for item in soup.select(src['select'])[:src['limit']]:
+            for item in items[:src['limit']]:
                 title = item.text.strip()
                 link = item.get('href')
 
-                if not title or not link or len(title) < 8:
+                # 过滤无效
+                if not title or not link or len(title) < 6:
                     continue
 
                 # 过滤监测月报
                 if "监测月报" in title or "监测报告" in title:
-                    continue
-
-                # 去重检查
-                if title[:20] in existing_titles:
                     continue
 
                 # 关键词过滤
@@ -213,6 +218,12 @@ def fetch_news():
                         link = base + link
                     else:
                         link = src['url'].rstrip('/') + '/' + link.lstrip('/')
+
+                # 去重
+                key = title[:20] + link[:50]
+                if key in existing_titles:
+                    continue
+                existing_titles.add(key)
 
                 # 判断范围
                 if "世界" in title or "国际" in title or "全球" in title:
@@ -278,26 +289,21 @@ def fetch_news():
                     "摘要": summary,
                     "类型": news_type
                 })
-                existing_titles.add(title[:20])
                 count += 1
                 new_count += 1
-
             print(f"✅ {src['name']} 新增 {count} 条")
         except Exception as e:
             print(f"❌ {src['name']} 出错: {e}")
+        time.sleep(0.5)
 
-    # ============================================================
     # 按日期从新到旧排序
-    # ============================================================
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
-    # ============================================================
     # 保存
-    # ============================================================
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
-    print(f"🎉 大功告成！共 {len(all_news)} 条新闻（历史 {len(HISTORICAL_NEWS)} 条 + 新增 {new_count} 条）")
+    print(f"🎉 大功告成！共 {len(all_news)} 条新闻，新增 {new_count} 条")
 
 if __name__ == "__main__":
     fetch_news()
