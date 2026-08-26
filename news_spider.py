@@ -147,15 +147,14 @@ HISTORICAL_NEWS = [
 # 爬虫主函数
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（增强版）")
+    print("🤖 小机器人开始干活啦！（全面增强版）")
 
-    # 尝试加载已有数据（优先从文件加载，避免覆盖已有的新数据）
+    # 尝试加载已有数据
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
             print(f"📚 加载现有数据 {len(all_news)} 条")
     except:
-        # 如果文件不存在，使用内置历史数据
         all_news = HISTORICAL_NEWS.copy()
         print(f"📚 使用内置历史数据 {len(all_news)} 条")
 
@@ -165,24 +164,39 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 数据源列表（12个精选网站）
+    # 数据源列表（20个精选网站，覆盖全国主要区域）
     # ============================================================
     sources = [
+        # ---- 全国性行业门户（4个） ----
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
+        {"name": "人民铁道报", "url": "https://peoplerail.com/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 华北（2个） ----
         {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 华东（4个） ----
         {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "象山县人民政府", "url": "https://xiangshan.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "无锡地铁", "url": "https://wxjkq.wuxi.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 华南（3个） ----
         {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
+        # ---- 西南（3个） ----
         {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "人民网-四川频道", "url": "https://sc.people.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 西北（2个） ----
         {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国甘肃网", "url": "https://gansu.gscn.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        # ---- 东北（2个） ----
         {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中国吉林网", "url": "https://news.cnjiwang.com/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
-    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段']
+    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体']
 
     for src in sources:
         try:
@@ -199,19 +213,15 @@ def fetch_news():
                 title = item.text.strip()
                 link = item.get('href')
 
-                # 过滤无效
                 if not title or not link or len(title) < 6:
                     continue
 
-                # 过滤监测月报
                 if "监测月报" in title or "监测报告" in title:
                     continue
 
-                # 关键词过滤
                 if not any(k in title for k in keyword_filters):
                     continue
 
-                # 补全链接
                 if not link.startswith('http'):
                     if link.startswith('/'):
                         base = src['url'].split('/')[0] + '//' + src['url'].split('/')[2]
@@ -219,13 +229,11 @@ def fetch_news():
                     else:
                         link = src['url'].rstrip('/') + '/' + link.lstrip('/')
 
-                # 去重
                 key = title[:20] + link[:50]
                 if key in existing_titles:
                     continue
                 existing_titles.add(key)
 
-                # 判断范围
                 if "世界" in title or "国际" in title or "全球" in title:
                     scope = "世界"
                 elif "广东" in title or "深圳" in title or "佛山" in title or "东莞" in title:
@@ -238,7 +246,6 @@ def fetch_news():
                 else:
                     scope = src['scope']
 
-                # 判断类型
                 news_type = "综合"
                 type_keywords = {
                     "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "推进", "建设", "进展", "完成", "交付", "贯通", "合龙", "施工"],
@@ -256,7 +263,6 @@ def fetch_news():
                     if news_type != "综合":
                         break
 
-                # 提取关键词
                 keywords = []
                 kw_map = {
                     '国铁': ['高铁', '铁路', '国铁'],
@@ -276,7 +282,6 @@ def fetch_news():
                 if not keywords:
                     keywords = ["轨道"]
 
-                # 生成摘要
                 summary = title[:80] + ("..." if len(title) > 80 else "")
 
                 all_news.append({
@@ -299,7 +304,6 @@ def fetch_news():
     # 按日期从新到旧排序
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
-    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
