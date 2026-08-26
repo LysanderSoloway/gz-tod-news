@@ -147,7 +147,7 @@ HISTORICAL_NEWS = [
 # 爬虫主函数
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（全面增强版）")
+    print("🤖 小机器人开始干活啦！（全面增强版+新网站）")
 
     # 尝试加载已有数据
     try:
@@ -164,7 +164,7 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 数据源列表（20个精选网站，覆盖全国主要区域）
+    # 数据源列表（新增6个网站，共26个）
     # ============================================================
     sources = [
         # ---- 全国性行业门户（7个） ----
@@ -194,10 +194,17 @@ def fetch_news():
         # ---- 西北（1个） ----
         {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
         # ---- 东北（1个） ----
-        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10),
+        # ---- 新增6个网站（2026年8月新闻来源） ----
+        {"name": "宁波轨道交通官网", "url": "https://www.nbmetro.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "重庆市人民政府", "url": "https://www.cq.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "合肥市人民政府", "url": "https://www.hefei.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "交通运输部", "url": "https://www.mot.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "香港政府新闻网", "url": "https://www.news.gov.hk/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中山市人民政府", "url": "https://www.zs.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
-    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体']
+    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体', '保障性租赁住房', '城际铁路', 'TOD模式']
 
     for src in sources:
         try:
