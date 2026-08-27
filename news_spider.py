@@ -147,7 +147,7 @@ HISTORICAL_NEWS = [
 # 爬虫主函数
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（全面增强版+新网站）")
+    print("🤖 小机器人开始干活啦！（稳定版）")
 
     # 尝试加载已有数据
     try:
@@ -164,10 +164,9 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 数据源列表（新增6个网站，共26个）
+    # 数据源列表（精选稳定网站，去掉容易报错的政府网站）
     # ============================================================
     sources = [
-        # ---- 全国性行业门户（7个） ----
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
@@ -175,36 +174,21 @@ def fetch_news():
         {"name": "中国交通新闻网", "url": "https://www.zgjtb.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "中国城市轨道交通网", "url": "https://www.chinametro.net/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 华北（3个） ----
         {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "铁路关注网", "url": "https://tlgz.org.cn/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 华东（4个） ----
         {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "杭州网", "url": "https://www.hangzhou.com.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "高铁网", "url": "https://news.gaotie.cn/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 华南（3个） ----
         {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
-        # ---- 西南（2个） ----
         {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 西北（1个） ----
         {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
-        # ---- 东北（1个） ----
-        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10),
-        # ---- 新增6个网站（2026年8月新闻来源） ----
-        {"name": "宁波轨道交通官网", "url": "https://www.nbmetro.com/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "重庆市人民政府", "url": "https://www.cq.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "合肥市人民政府", "url": "https://www.hefei.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "交通运输部", "url": "https://www.mot.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "香港政府新闻网", "url": "https://www.news.gov.hk/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "中山市人民政府", "url": "https://www.zs.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
-    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体', '保障性租赁住房', '城际铁路', 'TOD模式']
+    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段']
 
     for src in sources:
         try:
@@ -214,7 +198,7 @@ def fetch_news():
             soup = BeautifulSoup(r.text, 'html.parser')
             items = soup.select(src['select'])
             if not items:
-                print(f"⚠️ {src['name']} 无匹配链接")
+                print(f"⚠️ {src['name']} 无匹配链接，跳过")
                 continue
             count = 0
             for item in items[:src['limit']]:
@@ -309,7 +293,6 @@ def fetch_news():
             print(f"❌ {src['name']} 出错: {e}")
         time.sleep(0.5)
 
-    # 按日期从新到旧排序
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
     with open('news_data.json', 'w', encoding='utf-8') as f:
