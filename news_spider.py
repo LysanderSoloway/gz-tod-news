@@ -31,51 +31,45 @@ def fetch_news():
     # 数据源列表
     # ============================================================
     sources = [
-        # ---- 原有稳定网站 ----
-        {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "select": "a[title]", "limit": 12},
-        {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "select": "a", "limit": 10},
-        {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "select": "a[title]", "limit": 12},
-        {"name": "人民铁道网", "url": "https://www.peoplerail.com/", "select": "a", "limit": 10},
-        {"name": "中国交通新闻网", "url": "https://www.zgjtb.com/", "select": "a", "limit": 10},
-        {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/", "select": "a", "limit": 10},
-        {"name": "中国城市轨道交通网", "url": "https://www.chinametro.net/", "select": "a", "limit": 10},
-        {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "select": "a", "limit": 10},
-        {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "select": "a", "limit": 10},
-        {"name": "南方日报", "url": "https://epaper.nfnews.com/", "select": "a", "limit": 10},
-        {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "select": "a", "limit": 10},
-        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "select": "a", "limit": 10},
-        {"name": "厦门网", "url": "https://news.xmnn.cn/", "select": "a", "limit": 10},
-        {"name": "杭州网", "url": "https://www.hangzhou.com.cn/", "select": "a", "limit": 10},
-        {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "select": "a", "limit": 10},
-        {"name": "沈阳网", "url": "https://www.syd.com.cn/", "select": "a", "limit": 10},
-        {"name": "观点网", "url": "https://www.guandian.cn/", "select": "a", "limit": 10},
-        {"name": "北京市人民政府", "url": "https://www.beijing.gov.cn/zhengce/zcjd/", "select": "a", "limit": 10},
-        {"name": "上海松江", "url": "https://www.shsj.gov.cn/zwdt/", "select": "a", "limit": 10},
-        {"name": "象山县人民政府", "url": "https://www.xiangshan.gov.cn/col/col122900/", "select": "a", "limit": 10},
-        {"name": "宁波轨道交通官网", "url": "https://www.nbmetro.com/", "select": "a", "limit": 10},
-        {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "select": "a", "limit": 10},
-        {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "select": "a", "limit": 10},
+    # ---- 原有稳定网站 ----
+    {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "select": "a[title]", "limit": 12},
+    {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "select": "a", "limit": 10},
+    {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "select": "a[title]", "limit": 12},
+    {"name": "人民铁道网", "url": "https://www.peoplerail.com/", "select": "a", "limit": 10},
+    {"name": "中国交通新闻网", "url": "https://www.zgjtb.com/", "select": "a", "limit": 10},
+    {"name": "世界轨道交通资讯网", "url": "https://rail.ally.net.cn/", "select": "a", "limit": 10},
+    {"name": "中国城市轨道交通网", "url": "https://www.chinametro.net/", "select": "a", "limit": 10},
+    {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "select": "a", "limit": 10},
+    {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "select": "a", "limit": 10},
+    {"name": "南方日报", "url": "https://epaper.nfnews.com/", "select": "a", "limit": 10},
+    {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "select": "a", "limit": 10},
+    {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "select": "a", "limit": 10},
+    {"name": "厦门网", "url": "https://news.xmnn.cn/", "select": "a", "limit": 10},
+    {"name": "杭州网", "url": "https://www.hangzhou.com.cn/", "select": "a", "limit": 10},
+    {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "select": "a", "limit": 10},
+    {"name": "沈阳网", "url": "https://www.syd.com.cn/", "select": "a", "limit": 10},
+    {"name": "观点网", "url": "https://www.guandian.cn/", "select": "a", "limit": 10},
 
-        # ---- 2026年8月新增网站 ----
-        {"name": "合肥市人民政府", "url": "https://www.hefei.gov.cn/", "select": "a", "limit": 10},
-        {"name": "无锡地铁", "url": "https://www.wxmetro.com/", "select": "a", "limit": 10},
-        {"name": "马鞍山市人民政府", "url": "https://www.mas.gov.cn/", "select": "a", "limit": 10},
-        {"name": "青岛新闻网", "url": "https://www.qingdaonews.com/", "select": "a", "limit": 10},
-        {"name": "广东省交通运输厅", "url": "https://td.gd.gov.cn/", "select": "a", "limit": 10},
-        {"name": "天津轨道交通集团", "url": "http://www.tjgdjt.com/", "select": "a", "limit": 10},
-        {"name": "香港政府新闻网", "url": "https://www.news.gov.hk/", "select": "a", "limit": 10},
-        {"name": "广州地铁官网", "url": "https://www.gzmtr.com/", "select": "a", "limit": 10},
-        {"name": "佛山市人民政府", "url": "https://www.foshan.gov.cn/", "select": "a", "limit": 10},
-    ]
+    # ---- 优化后的政府类网站（使用精准新闻栏目页） ----
+    {"name": "北京市人民政府", "url": "https://www.beijing.gov.cn/zhengce/zcjd/", "select": "a", "limit": 10},
+    {"name": "上海松江", "url": "https://www.shsj.gov.cn/zwdt/", "select": "a", "limit": 10},
+    {"name": "象山县人民政府", "url": "https://www.xiangshan.gov.cn/col/col122900/", "select": "a", "limit": 10},
+    {"name": "合肥市人民政府", "url": "https://www.hefei.gov.cn/xwzx/", "select": "a", "limit": 10},
+    {"name": "马鞍山市人民政府", "url": "https://www.mas.gov.cn/xwzx/", "select": "a", "limit": 10},
+    {"name": "佛山市人民政府", "url": "https://www.foshan.gov.cn/zwgk/", "select": "a", "limit": 10},
+    {"name": "广东省交通运输厅", "url": "https://td.gd.gov.cn/zxzx/", "select": "a", "limit": 10},
 
-    keyword_filters = [
-        'TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城',
-        '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体',
-        '站城一体', '站城一体化', '轨道交通综合体', '车辆段上盖',
-        '西丽站', '白佛桥', '洪岗', '深汕枢纽', '谈渡桥', '马鞍山南站',
-        '赤沙车辆段', '沙坡尾', '穗深城际', '佛穗莞城际', '科学城轨交中心',
-        '乐益天地', 'Z4线', '泰达站', '启德', '南屯站'
-    ]
+    # ---- 企业/地铁官网 ----
+    {"name": "宁波轨道交通官网", "url": "https://www.nbmetro.com/", "select": "a", "limit": 10},
+    {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "select": "a", "limit": 10},
+    {"name": "无锡地铁", "url": "https://www.wxmetro.com/", "select": "a", "limit": 10},
+    {"name": "广州地铁官网", "url": "https://www.gzmtr.com/", "select": "a", "limit": 10},
+    {"name": "天津轨道交通集团", "url": "http://www.tjgdjt.com/xinwen/", "select": "a", "limit": 10},
+
+    # ---- 地方新闻媒体 ----
+    {"name": "青岛新闻网", "url": "https://www.qingdaonews.com/", "select": "a", "limit": 10},
+    {"name": "香港政府新闻网", "url": "https://www.news.gov.hk/tc/", "select": "a", "limit": 10},
+]
 
     for src in sources:
         try:
