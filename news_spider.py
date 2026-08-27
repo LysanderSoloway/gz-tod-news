@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（保留历史版）")
+    print("小机器人开始干活啦！")
 
     # 1. 先加载已有的新闻数据
     try:
