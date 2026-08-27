@@ -143,11 +143,13 @@ HISTORICAL_NEWS = [
     {"日期": "2026-05-28", "标题": "广州白云站、南沙站打造铁路枢纽客站新标杆", "链接": "http://www.chinatod.com.cn/index.php?a=show&c=index&catid=29&id=741&m=content", "来源": "中国TOD网", "范围": "广州市", "关键词": ["国铁", "综合交通枢纽"], "摘要": "广州白云站、南沙站实施铁路土地综合开发。", "类型": "项目建设进展"}
 ]
 
+HISTORICAL_NEWS = []  # 请从您之前的代码中复制完整的历史数据
+
 # ============================================================
 # 爬虫主函数
 # ============================================================
 def fetch_news():
-    print("🤖 小机器人开始干活啦！（稳定版）")
+    print("🤖 小机器人开始干活啦！（近期新闻增强版）")
 
     # 尝试加载已有数据
     try:
@@ -155,8 +157,13 @@ def fetch_news():
             all_news = json.load(f)
             print(f"📚 加载现有数据 {len(all_news)} 条")
     except:
-        all_news = HISTORICAL_NEWS.copy()
-        print(f"📚 使用内置历史数据 {len(all_news)} 条")
+        # 如果文件不存在，使用内置历史数据（如果有）
+        if HISTORICAL_NEWS:
+            all_news = HISTORICAL_NEWS.copy()
+            print(f"📚 使用内置历史数据 {len(all_news)} 条")
+        else:
+            all_news = []
+            print("📚 无现有数据，从零开始")
 
     # 建立去重索引
     existing_titles = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
@@ -164,9 +171,10 @@ def fetch_news():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
     # ============================================================
-    # 数据源列表（精选稳定网站，去掉容易报错的政府网站）
+    # 数据源列表（包含原有稳定网站 + 新增加的近期新闻网站）
     # ============================================================
     sources = [
+        # ---- 原有稳定网站 ----
         {"name": "中国轨道交通网", "url": "https://www.rail-transit.com/news/", "scope": "全国", "select": "a[title]", "limit": 12},
         {"name": "中国城市轨道交通协会", "url": "https://www.camet.org.cn/news/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "中国TOD网", "url": "https://www.chinatod.com.cn/index.php?m=content&c=index&a=lists&catid=36", "scope": "全国", "select": "a[title]", "limit": 12},
@@ -177,18 +185,28 @@ def fetch_news():
         {"name": "北京日报", "url": "https://xinwen.bjd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "天津日报", "url": "https://epaper.tianjinwe.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "观点网", "url": "https://www.guandian.cn/", "scope": "全国", "select": "a", "limit": 10},
-        {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "杭州网", "url": "https://www.hangzhou.com.cn/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "南方日报", "url": "https://epaper.nfnews.com/", "scope": "广东省", "select": "a", "limit": 10},
-        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
         {"name": "广州日报大洋网", "url": "https://news.dayoo.com/guangzhou/", "scope": "广州市", "select": "a", "limit": 10},
         {"name": "四川网络广播电视台", "url": "https://www.sctv.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "成都轨道集团", "url": "https://www.chengdurail.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "西安地铁网", "url": "https://www.xian-metro.com/", "scope": "全国", "select": "a", "limit": 10},
         {"name": "沈阳网", "url": "https://www.syd.com.cn/", "scope": "全国", "select": "a", "limit": 10},
+
+        # ---- 近期新闻新增网站 ----
+        {"name": "厦门网", "url": "https://news.xmnn.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "宁波轨道交通官网", "url": "https://www.nbmetro.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "深圳新闻网", "url": "https://www.sznews.com/news/", "scope": "广东省", "select": "a", "limit": 10},
+        {"name": "北京市人民政府", "url": "https://www.beijing.gov.cn/", "scope": "全国", "select": "a", "limit": 10},  # 建议调整为具体新闻栏目如 /zfxxgk/
+        {"name": "上海松江", "url": "https://www.shsj.gov.cn/", "scope": "全国", "select": "a", "limit": 10},  # 建议调整为 /zwdt/
+        {"name": "象山县人民政府", "url": "https://www.xiangshan.gov.cn/", "scope": "全国", "select": "a", "limit": 10},  # 建议调整为 /news/
+        {"name": "深圳市规划和自然资源局", "url": "https://pnr.sz.gov.cn/", "scope": "广东省", "select": "a", "limit": 10},
+        {"name": "漳州市自然资源局", "url": "https://zrzyj.zhangzhou.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "中山城市建设集团", "url": "https://www.zsctjt.com/", "scope": "全国", "select": "a", "limit": 10},
+        {"name": "汕头政协", "url": "https://www.stzx.gov.cn/", "scope": "全国", "select": "a", "limit": 10},
     ]
 
-    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段']
+    keyword_filters = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '场站', '上盖', '车辆段', 'TOD综合体', '站城一体', '保障性租赁住房', '城际铁路', 'TOD模式']
 
     for src in sources:
         try:
