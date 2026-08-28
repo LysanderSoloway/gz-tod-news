@@ -4,101 +4,41 @@ import json
 import time
 import random
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import logging
+import re
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 关键词过滤
+# 关键词过滤（只关心这些词）
 KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖']
 
-# 域名转网站名称（常见的媒体名称）
-DOMAIN_TO_SITE = {
-    '163.com': '网易',
-    'news.163.com': '网易新闻',
-    'sina.com.cn': '新浪',
-    'news.sina.com.cn': '新浪新闻',
-    'sohu.com': '搜狐',
-    'news.sohu.com': '搜狐新闻',
-    'qq.com': '腾讯',
-    'news.qq.com': '腾讯新闻',
-    'ifeng.com': '凤凰网',
-    'news.ifeng.com': '凤凰网',
-    'people.com.cn': '人民网',
-    'xinhuanet.com': '新华网',
-    'chinanews.com': '中新网',
-    'cnr.cn': '央广网',
-    'cctv.com': '央视网',
-    'gmw.cn': '光明网',
-    'thepaper.cn': '澎湃新闻',
-    'guancha.cn': '观察者网',
-    'caixin.com': '财新网',
-    '21jingji.com': '21世纪经济报道',
-    'yicai.com': '第一财经',
-    'cls.cn': '财联社',
-    'jrj.com.cn': '金融界',
-    'stcn.com': '证券时报',
-    'zqrb.cn': '证券日报',
-    'ccb.com': '建设银行',
-    'gzmtr.com': '广州地铁',
-    'szmc.net': '深圳地铁',
-    'shmetro.com': '上海地铁',
-    'bjsubway.com': '北京地铁',
-    'gz.gov.cn': '广州市政府',
-    'gd.gov.cn': '广东省政府',
-    'gov.cn': '中国政府网',
-    'beijing.gov.cn': '北京市政府',
-    'sh.gov.cn': '上海市政府',
-    'sz.gov.cn': '深圳市政府',
-    'chinatod.com.cn': '中国TOD网',
-    'rail-transit.com': '中国轨道交通网',
-    'peoplerail.com': '人民铁道网',
-    'zgjtb.com': '中国交通新闻网',
-    'railworld.com.cn': '轨道世界',
-    'gaotie.cn': '高铁网',
-    'chinametro.net': '中国城市轨道交通网',
-    'rt-media.cn': 'RT轨道交通',
-    'xmnn.cn': '厦门网',
-    'sznews.com': '深圳新闻网',
-    'dayoo.com': '广州日报大洋网',
-    'sctv.com': '四川网络广播电视台',
-    'syd.com.cn': '沈阳网',
-    'guandian.cn': '观点网',
-    'bii.com.cn': '北京京投公司',
-}
-
-def extract_domain(url):
-    """从链接中提取域名"""
-    try:
-        parsed = urlparse(url)
-        domain = parsed.netloc.lower()
-        # 去掉 www. 前缀
-        if domain.startswith('www.'):
-            domain = domain[4:]
-        return domain
-    except:
-        return None
-
-def get_source_name(url):
-    """根据链接获取来源网站名称"""
-    domain = extract_domain(url)
-    if not domain:
-        return '未知来源'
-    # 先精确匹配
-    if domain in DOMAIN_TO_SITE:
-        return DOMAIN_TO_SITE[domain]
-    # 再尝试模糊匹配（比如 xxx.163.com 匹配 163.com）
-    for key, name in DOMAIN_TO_SITE.items():
-        if domain.endswith(key) or key in domain:
-            return name
-    # 如果都不匹配，返回域名本身
-    return domain
+def clean_title(title):
+    """清理标题，去掉末尾的网站名、平台名等多余信息"""
+    if not title:
+        return title
+    # 去掉常见的尾部附加信息
+    patterns = [
+        r'\s*[-–—]\s*(快资讯|搜狐|新浪|网易|腾讯|今日头条|百家号|一点资讯|ZAKER|大风号|澎湃号|媒体号|APP|客户端|网页版|手机版)$',
+        r'\s*[-–—]\s*[A-Za-z0-9]+$',  # 去掉尾部英文或数字
+        r'\s*[-–—]\s*手机搜狐网$',
+        r'\s*[-–—]\s*搜狐网$',
+        r'\s*[-–—]\s*快资讯$',
+        r'\s*[-–—]\s*.*?网$',  # 去掉“-XX网”结尾
+        r'\s*[-–—]\s*.*?新闻$',  # 去掉“-XX新闻”结尾
+        r'\s*[-–—]\s*.*?资讯$',  # 去掉“-XX资讯”结尾
+        r'\s*[-–—]\s*.*?媒体$',  # 去掉“-XX媒体”结尾
+        r'\s*[|｜]\s*.*?$',  # 去掉“| XX”结尾
+    ]
+    for pattern in patterns:
+        title = re.sub(pattern, '', title, flags=re.IGNORECASE)
+    return title.strip()
 
 def fetch_news():
-    logging.info("🤖 小机器人开始干活啦！（来源优化版）")
+    logging.info("🤖 小机器人开始干活啦！（标题清理版）")
     
-    # 1. 读取已有新闻
+    # 1. 读取已有的新闻
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
@@ -107,7 +47,7 @@ def fetch_news():
         all_news = []
         logging.info("📚 从零开始")
 
-    # 2. 去重索引
+    # 2. 去重索引（标题前20字 + 链接前50字）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
 
     # 3. 读取数据源配置
@@ -125,6 +65,7 @@ def fetch_news():
         'Accept-Language': 'zh-CN,zh;q=0.9',
     })
 
+    # 遍历每个数据源
     for src in sources:
         name = src['name']
         base_url = src['url']
@@ -136,6 +77,7 @@ def fetch_news():
         logging.info(f"🔍 正在抓取: {name}")
 
         for page in range(1, pages + 1):
+            # 构造分页URL
             if page == 1:
                 page_url = base_url
             else:
@@ -160,36 +102,40 @@ def fetch_news():
 
                 count = 0
                 for item in items[:limit]:
-                    title = item.text.strip()
+                    raw_title = item.text.strip()
                     link = item.get('href')
-                    if not title or not link or len(title) < 6:
+                    if not raw_title or not link or len(raw_title) < 6:
                         continue
 
-                    if not any(k in title for k in KEYWORD_FILTERS):
+                    # 关键词过滤（标题里必须包含这些词之一）
+                    if not any(k in raw_title for k in KEYWORD_FILTERS):
                         continue
 
+                    # --- 清理标题（去掉多余信息）---
+                    title = clean_title(raw_title)
+
+                    # 安全拼接完整链接
                     full_link = urljoin(page_url, link)
 
+                    # 去重
                     key = title[:20] + full_link[:50]
                     if key in existing_keys:
                         continue
                     existing_keys.add(key)
 
-                    # --- 关键改动：从链接提取来源网站 ---
-                    source_name = get_source_name(full_link)
-
+                    # 直接用今天作为日期（不点进详情页）
                     publish_date = datetime.now().strftime("%Y-%m-%d")
 
-                    # 范围判断
+                    # 自动判断范围
                     scope = "全国"
-                    if any(w in title for w in ["世界", "国际", "全球"]):
+                    if any(w in raw_title for w in ["世界", "国际", "全球"]):
                         scope = "世界"
-                    elif "广州" in title:
+                    elif "广州" in raw_title:
                         scope = "广州市"
-                    elif any(w in title for w in ["广东", "深圳", "佛山", "东莞", "中山", "珠海"]):
+                    elif any(w in raw_title for w in ["广东", "深圳", "佛山", "东莞", "中山", "珠海"]):
                         scope = "广东省"
 
-                    # 类型判断
+                    # 自动判断类型
                     news_type = "综合"
                     type_map = {
                         "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "建设", "进展", "完成", "交付", "贯通"],
@@ -200,7 +146,7 @@ def fetch_news():
                         "可持续经营运营": ["可持续", "经营", "运营", "营收", "盈利", "客流"]
                     }
                     for t, kws in type_map.items():
-                        if any(kw in title for kw in kws):
+                        if any(kw in raw_title for kw in kws):
                             news_type = t
                             break
 
@@ -217,18 +163,20 @@ def fetch_news():
                         '可持续经营运营': ['可持续', '经营', '运营']
                     }
                     for kw, words in kw_map.items():
-                        if any(w in title for w in words):
+                        if any(w in raw_title for w in words):
                             keywords.append(kw)
                     if not keywords:
                         keywords = ["轨道"]
 
+                    # 摘要（取标题前80字）
                     summary = title[:80] + ("..." if len(title) > 80 else "")
 
+                    # 组装新闻
                     news_item = {
                         "日期": publish_date,
                         "标题": title,
                         "链接": full_link,
-                        "来源": source_name,      # <-- 这里是真正的来源网站
+                        "来源": name,
                         "范围": scope,
                         "关键词": keywords,
                         "摘要": summary,
@@ -238,6 +186,7 @@ def fetch_news():
                     count += 1
                     new_count += 1
 
+                    # 适当延时
                     time.sleep(random.uniform(0.2, 0.5))
 
                 logging.info(f"✅ {name} 第 {page} 页新增 {count} 条")
@@ -249,8 +198,10 @@ def fetch_news():
 
         time.sleep(random.uniform(1.0, 2.0))
 
+    # 按日期排序（新在前）
     all_news.sort(key=lambda x: x["日期"], reverse=True)
 
+    # 保存数据
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
