@@ -88,12 +88,10 @@ def clean_text(text):
     return text.strip()
 
 def extract_title_and_summary(item, soup):
-    """提取标题和摘要，如果失败则返回空字符串"""
     try:
         title = ''
         summary = ''
         
-        # 提取链接文本作为标题
         link_elem = item.find('a')
         if link_elem:
             title = link_elem.text.strip()
@@ -102,7 +100,6 @@ def extract_title_and_summary(item, soup):
         
         title = clean_text(title)
         
-        # 清理标题后缀
         if '...' in title:
             title = title.split('...')[0].strip()
         
@@ -118,12 +115,10 @@ def extract_title_and_summary(item, soup):
         if len(title) > 60:
             title = title[:60] + '...'
         
-        # 提取摘要
         summary_elem = item.find(class_='c-abstract')
         if summary_elem:
             summary = summary_elem.text.strip()
         else:
-            # 尝试取标题之外的文本
             full_text = item.text.strip()
             full_text = clean_text(full_text)
             if title and full_text.startswith(title):
@@ -182,12 +177,13 @@ def extract_keywords(title):
     return keywords if keywords else ["轨道"]
 
 def fetch_news():
-    logging.info("🤖 爬虫启动")
+    logging.info("🤖 爬虫启动（增量追加版）")
     
+    # ===== 关键改动：读取旧数据，新数据加在后面 =====
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 已有 {len(all_news)} 条数据")
+        logging.info(f"📚 已有 {len(all_news)} 条数据，新数据将追加在后面")
     except FileNotFoundError:
         all_news = []
         logging.info("📚 从零开始")
@@ -195,6 +191,7 @@ def fetch_news():
         all_news = []
         logging.warning("⚠️ 数据文件损坏，从零开始")
     
+    # 建立去重索引（用标题+链接）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
     try:
@@ -254,7 +251,6 @@ def fetch_news():
                 count = 0
                 for item in items[:limit]:
                     try:
-                        # 提取链接
                         link_elem = item.find('a')
                         if link_elem:
                             link = link_elem.get('href')
@@ -265,8 +261,6 @@ def fetch_news():
                             continue
                         
                         full_link = urljoin(page_url, link)
-                        
-                        # 提取标题和摘要
                         title, summary = extract_title_and_summary(item, soup)
                         
                         if not title:
@@ -313,8 +307,10 @@ def fetch_news():
         
         time.sleep(random.uniform(1.0, 2.0))
     
+    # 按日期排序（新在前）
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
+    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
     
