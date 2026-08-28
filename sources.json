@@ -1,6 +1,6 @@
 [
   {
-    "name": "百度新闻-国铁",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E5%9B%BD%E9%93%81",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -8,7 +8,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-城际",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E5%9F%8E%E9%99%85%E9%93%81%E8%B7%AF",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -16,7 +16,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-地铁",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E5%9C%B0%E9%93%81",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -24,7 +24,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-轨道交通",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E8%BD%A8%E9%81%93%E4%BA%A4%E9%80%9A",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -32,7 +32,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-综合交通枢纽",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E7%BB%BC%E5%90%88%E4%BA%A4%E9%80%9A%E6%9E%A2%E7%BA%BD",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -40,7 +40,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-综合开发",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E7%BB%BC%E5%90%88%E5%BC%80%E5%8F%91%20TOD",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -48,7 +48,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-投融资",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E6%8A%95%E8%9E%8D%E8%B5%84%20%E8%BD%A8%E9%81%93",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -56,7 +56,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "百度新闻-可持续经营",
+    "name": "百度新闻",
     "url": "https://news.baidu.com/s?tn=news&word=%E5%8F%AF%E6%8C%81%E7%BB%AD%E7%BB%8F%E8%90%A5%20%E8%BD%A8%E9%81%93",
     "select": "div.result a",
     "limit_per_page": 15,
@@ -64,7 +64,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "搜狗新闻-轨道交通",
+    "name": "搜狗新闻",
     "url": "https://news.sogou.com/news?query=%E8%BD%A8%E9%81%93%E4%BA%A4%E9%80%9A",
     "select": "div.news-list h3 a",
     "limit_per_page": 12,
@@ -72,7 +72,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "搜狗新闻-TOD",
+    "name": "搜狗新闻",
     "url": "https://news.sogou.com/news?query=TOD%20%E7%BB%BC%E5%90%88%E5%BC%80%E5%8F%91",
     "select": "div.news-list h3 a",
     "limit_per_page": 12,
@@ -80,7 +80,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "360新闻-城际铁路",
+    "name": "360新闻",
     "url": "https://news.so.com/ns?q=%E5%9F%8E%E9%99%85%E9%93%81%E8%B7%AF",
     "select": "li.res-list a",
     "limit_per_page": 12,
@@ -88,7 +88,7 @@
     "encoding": "utf-8"
   },
   {
-    "name": "360新闻-地铁TOD",
+    "name": "360新闻",
     "url": "https://news.so.com/ns?q=%E5%9C%B0%E9%93%81%20TOD",
     "select": "li.res-list a",
     "limit_per_page": 12,
