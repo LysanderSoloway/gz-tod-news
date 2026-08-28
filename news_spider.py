@@ -4,15 +4,149 @@ import json
 import time
 import random
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖']
 
+# ============================================================
+# 媒体域名到显示名称映射表（爬虫直接用）
+# ============================================================
+MEDIA_MAP = {
+    'people.com.cn': '人民网',
+    'xinhuanet.com': '新华网',
+    'gmw.cn': '光明网',
+    'cnr.cn': '央广网',
+    'cctv.com': '央视网',
+    'china.com.cn': '中国网',
+    'zgjtb.com': '中国交通报',
+    'peoplerail.com': '人民铁道报',
+    'bjnews.com.cn': '新京报',
+    'thepaper.cn': '澎湃新闻',
+    'yicai.com': '第一财经',
+    'leju.com': '乐居财经',
+    'sohu.com': '搜狐新闻',
+    '163.com': '网易新闻',
+    'sina.com.cn': '新浪新闻',
+    'ifeng.com': '凤凰网',
+    'huanqiu.com': '环球网',
+    'jiemian.com': '界面新闻',
+    'caixin.com': '财新网',
+    '21jingji.com': '21世纪经济报道',
+    'nbd.com.cn': '每日经济新闻',
+    'stcn.com': '证券时报',
+    'eastmoney.com': '东方财富',
+    'hexun.com': '和讯网',
+    'gz.gov.cn': '广州市政府网',
+    'gd.gov.cn': '广东省政府网',
+    'gzmtr.com': '广州地铁官网',
+    'szmc.net': '深圳地铁官网',
+    'sznews.com': '深圳新闻网',
+    'dayoo.com': '广州日报大洋网',
+    'nfnews.com': '南方日报',
+    'oeeee.com': '南方都市报',
+    'ycwb.com': '羊城晚报',
+    'gz-cmc.com': '广州日报新花城',
+    'conghua.gov.cn': '从化区政府网',
+    'bj.gov.cn': '北京市政府网',
+    'beijing.gov.cn': '北京市政府网',
+    'bjd.com.cn': '北京日报',
+    'ynet.com': '北京青年报',
+    'tj.gov.cn': '天津政务网',
+    'sh.gov.cn': '上海市政府网',
+    'shmetro.com': '上海申通地铁',
+    'shobserver.com': '上观新闻',
+    'cq.gov.cn': '重庆市政府网',
+    'cql.gov.cn': '重庆日报',
+    'scol.com.cn': '四川观察',
+    'sctv.com': '四川广播电视台',
+    'jinan.gov.cn': '济南市政府网',
+    'jnnc.com': '济南日报',
+    'sd.gov.cn': '山东省政府网',
+    'sdjt.gov.cn': '山东省交通厅',
+    'xian-metro.com': '西安地铁官网',
+    'sx.chinanews.com': '中新网山西',
+    'henan.gov.cn': '河南省政府网',
+    'hubeidaily.net': '湖北日报',
+    'hunan.gov.cn': '湖南省政府网',
+    'icswb.com': '长沙晚报',
+    'gxnews.com.cn': '广西新闻网',
+    'xmnn.cn': '厦门网',
+    'nbmetro.com': '宁波轨道交通官网',
+    'hangzhou.com.cn': '杭州网',
+    'hangzhou.gov.cn': '杭州市政府网',
+    'suzhou.gov.cn': '苏州市政府网',
+    'nj.gov.cn': '南京市政府网',
+    'hebei.gov.cn': '河北省政府网',
+    'hebnews.cn': '河北新闻网',
+    'cnjiwang.com': '中国吉林网',
+    'jlnews.cn': '吉林日报',
+    'hljnews.cn': '黑龙江日报',
+    'chinatod.com.cn': '中国TOD网',
+    'rail-transit.com': '中国轨道交通网',
+    'chinametro.net': '中国城市轨道交通网',
+    'camet.org.cn': '中国城市轨道交通协会',
+    'rail.ally.net.cn': '世界轨道交通资讯网',
+    'rt-media.cn': 'RT轨道交通',
+    'railworld.com.cn': '轨道世界',
+    'gaotie.cn': '高铁网',
+    'railjournal.com': 'International Railway Journal',
+    'railwaygazette.com': 'Railway Gazette',
+    'uitp.org': 'UITP',
+    'tfl.gov.uk': '伦敦交通局',
+    'lta.gov.sg': '新加坡LTA',
+    'db.de': '德国铁路DB',
+    'jr-east.co.jp': 'JR东日本',
+    'fra.dot.gov': '美国联邦铁路管理局',
+    'europa.eu': '欧盟委员会',
+    'baidu.com': '百度新闻',
+    'sogou.com': '搜狗新闻',
+    'so.com': '360新闻',
+    'toutiao.com': '今日头条',
+    'news.qq.com': '腾讯新闻',
+    'news.163.com': '网易新闻',
+    'news.sina.com.cn': '新浪新闻',
+    'news.sohu.com': '搜狐新闻',
+}
+
+def get_media_name_from_link(link):
+    """从链接提取域名并查表获取媒体名称"""
+    if not link:
+        return None
+    try:
+        parsed = urlparse(link)
+        hostname = parsed.hostname or ''
+        hostname = hostname.replace('www.', '')
+        if hostname in MEDIA_MAP:
+            return MEDIA_MAP[hostname]
+        for domain, name in MEDIA_MAP.items():
+            if hostname.endswith('.' + domain):
+                return name
+        parts = hostname.split('.')
+        if len(parts) >= 2 and parts[-2] not in ['com', 'org', 'net', 'gov', 'edu', 'cn']:
+            return parts[-2].capitalize()
+        return hostname
+    except:
+        return None
+
+def clean_title(raw_title):
+    """清理标题尾巴"""
+    if not raw_title:
+        return '无标题'
+    title = raw_title
+    title = title.replace('快资讯', '').replace('1天前', '').replace('2天前', '').replace('3天前', '').replace('4天前', '').replace('5天前', '').replace('6天前', '').replace('7天前', '')
+    title = title.replace('搜狐', '').replace('新浪', '').replace('网易', '').replace('腾讯', '').replace('今日头条', '').replace('百家号', '').replace('一点资讯', '').replace('ZAKER', '').replace('大风号', '').replace('澎湃号', '').replace('媒体号', '')
+    title = title.strip()
+    if title.endswith('-'):
+        title = title[:-1].strip()
+    if len(title) > 35:
+        title = title[:35] + '...'
+    return title or '无标题'
+
 def fetch_news():
-    logging.info("🤖 小机器人开始干活啦！（最终版）")
+    logging.info("🤖 小机器人开始干活啦！（媒体名优化版）")
     
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
@@ -73,17 +207,18 @@ def fetch_news():
                     if not any(k in raw_title for k in KEYWORD_FILTERS):
                         continue
 
-                    # 清理标题：只取前15个字，保证绝对没有尾巴
-                    title = raw_title[:15].strip()
-                    if len(raw_title) > 15:
-                        title += '...'
-
                     full_link = urljoin(page_url, link)
+                    title = clean_title(raw_title)
 
                     key = title[:20] + full_link[:50]
                     if key in existing_keys:
                         continue
                     existing_keys.add(key)
+
+                    # ===== 从链接解析真实媒体名称 =====
+                    media_name = get_media_name_from_link(full_link)
+                    if not media_name:
+                        media_name = name  # 兜底：用原来的来源名
 
                     publish_date = datetime.now().strftime("%Y-%m-%d")
 
@@ -130,10 +265,10 @@ def fetch_news():
                         "日期": publish_date,
                         "标题": title,
                         "链接": full_link,
-                        "来源": name,
+                        "来源": media_name,  # 这里存的是真实媒体名！
                         "范围": scope,
                         "关键词": keywords,
-                        "摘要": title,
+                        "摘要": title[:80],
                         "类型": news_type
                     })
                     count += 1
