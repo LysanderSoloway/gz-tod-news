@@ -1274,6 +1274,63 @@ let showFavoritesOnly = false;
 let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
 // ============================================================
+// 【新增】标题清理函数
+// ============================================================
+function cleanTitle(rawTitle) {
+    if (!rawTitle) return '无标题';
+    let title = rawTitle;
+
+    // 1. 去掉“快资讯X天前”格式
+    title = title.replace(/\s*快资讯\s*\d+天前\s*$/, '');
+    title = title.replace(/\s*快资讯$/, '');
+
+    // 2. 去掉其他常见平台后缀
+    const suffixes = ['快资讯', '搜狐', '新浪', '网易', '腾讯', '今日头条', '百家号', '一点资讯', 'ZAKER', '大风号', '澎湃号', '媒体号', 'APP', '客户端'];
+    for (const suffix of suffixes) {
+        title = title.replace(new RegExp(`\\s*[-–—]\\s*${suffix}\\s*$`), '');
+        title = title.replace(new RegExp(`\\s*${suffix}\\s*$`), '');
+        // 处理带时间的：如“- 快资讯1天前”
+        title = title.replace(new RegExp(`\\s*[-–—]\\s*${suffix}\\s*\\d+天前\\s*$`), '');
+    }
+
+    // 3. 去掉末尾的“1天前”“2天前”等
+    title = title.replace(/\s*\d+天前\s*$/, '');
+    title = title.replace(/\s*\d+小时前\s*$/, '');
+    title = title.replace(/\s*\d+分钟前\s*$/, '');
+
+    // 4. 如果标题超过40字，截断并加“...”
+    if (title.length > 40) {
+        title = title.substring(0, 40) + '...';
+    }
+
+    return title.trim() || '无标题';
+}
+
+// ============================================================
+// 【新增】媒体来源清理函数
+// ============================================================
+function cleanSource(rawSource) {
+    if (!rawSource) return '未知来源';
+    let source = rawSource;
+
+    // 去掉“-地铁TOD”“-国铁”等后缀（保留主名称）
+    const suffixes = ['-地铁TOD', '-国铁', '-城际', '-轨道交通', '-TOD', '-综合开发', '-投融资', '-可持续经营'];
+    for (const suffix of suffixes) {
+        if (source.endsWith(suffix)) {
+            source = source.replace(suffix, '');
+            break;
+        }
+    }
+
+    // 统一命名：百度新闻、搜狗新闻、360新闻
+    if (source.includes('百度')) return '百度新闻';
+    if (source.includes('搜狗')) return '搜狗新闻';
+    if (source.includes('360')) return '360新闻';
+
+    return source.trim() || '未知来源';
+}
+
+// ============================================================
 // 收藏功能
 // ============================================================
 function getNewsId(item) {
@@ -1450,7 +1507,7 @@ function openProjectTimeline(projectName) {
                 <div class="modal-timeline-item">
                     <div class="modal-timeline-date">${item.日期 || ''}</div>
                     <div class="modal-timeline-body">
-                        <div class="title"><a href="${item.链接 || '#'}" target="_blank">${item.标题 || ''}</a></div>
+                        <div class="title"><a href="${item.链接 || '#'}" target="_blank">${cleanTitle(item.标题)}</a></div>
                         <div class="summary">${item.摘要 || ''}</div>
                         <span class="type-tag-sm ${typeCls}">${type}</span>
                         <span class="scope-tag-sm">${scope}</span>
@@ -1574,8 +1631,8 @@ function getFilteredData() {
     const typeFilter = document.getElementById('typeFilter').value;
 
     return allNewsData.filter(item => {
-        const title = item.标题 || '';
-        const media = item.来源 || '';
+        const title = cleanTitle(item.标题 || '');
+        const media = cleanSource(item.来源 || '');
         const content = item.摘要 || '';
         const scope = item.范围 || '全国';
         const keywords = item.关键词 || [];
@@ -1639,6 +1696,8 @@ function renderPage() {
         const favorited = isFavorited(item);
         const starIcon = favorited ? '⭐' : '☆';
         const starClass = favorited ? 'active' : '';
+        const cleanedTitle = cleanTitle(item.标题 || '');
+        const cleanedSource = cleanSource(item.来源 || '');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="num">${globalIndex}</td>
@@ -1646,11 +1705,11 @@ function renderPage() {
             <td class="scope-col"><span class="scope-badge ${scopeClass}">${scope}</span></td>
             <td class="type-col"><span class="type-tag ${typeCls}">${type}</span></td>
             <td class="ttl">
-                <a href="${item.链接 || '#'}" target="_blank">${item.标题 || ''}</a>
+                <a href="${item.链接 || '#'}" target="_blank">${cleanedTitle}</a>
                 ${trackBtn}
                 <button class="star-btn ${starClass}" onclick="toggleFavoriteItem(this, '${encodeURIComponent(JSON.stringify(item))}')" title="收藏">${starIcon}</button>
             </td>
-            <td class="media">${item.来源 || ''}</td>
+            <td class="media">${cleanedSource}</td>
             <td class="kw-cell">${kwHtml}</td>
             <td class="content">${item.摘要 || ''}</td>
         `;
@@ -1757,9 +1816,9 @@ function exportCSV(mode) {
             '日期': item.日期 || '',
             '范围': item.范围 || '全国',
             '类型': item.类型 || '综合',
-            '标题': item.标题 || '',
+            '标题': cleanTitle(item.标题 || ''),
             '链接': item.链接 || '#',
-            '来源': item.来源 || '',
+            '来源': cleanSource(item.来源 || ''),
             '关键词': (item.关键词 || []).join('、'),
             '摘要': item.摘要 || ''
         }));
@@ -1769,9 +1828,9 @@ function exportCSV(mode) {
             '日期': item.日期 || '',
             '范围': item.范围 || '全国',
             '类型': item.类型 || '综合',
-            '标题': item.标题 || '',
+            '标题': cleanTitle(item.标题 || ''),
             '链接': item.链接 || '#',
-            '来源': item.来源 || '',
+            '来源': cleanSource(item.来源 || ''),
             '关键词': (item.关键词 || []).join('、'),
             '摘要': item.摘要 || ''
         }));
