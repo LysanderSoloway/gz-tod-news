@@ -8,16 +8,10 @@ from urllib.parse import urljoin, urlparse
 import logging
 import re
 
-# ============================================================
-# 配置
-# ============================================================
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖', '国铁']
 
-# ============================================================
-# 媒体域名 → 显示名称映射
-# ============================================================
 MEDIA_MAP = {
     'people.com.cn': '人民网', 'xinhuanet.com': '新华网', 'gmw.cn': '光明网',
     'cnr.cn': '央广网', 'cctv.com': '央视网', 'china.com.cn': '中国网',
@@ -67,11 +61,7 @@ MEDIA_MAP = {
     'news.sohu.com': '搜狐新闻',
 }
 
-# ============================================================
-# 工具函数
-# ============================================================
 def get_media_name(link):
-    """从链接提取真实媒体名称"""
     if not link:
         return None
     try:
@@ -91,74 +81,66 @@ def get_media_name(link):
         return None
 
 def clean_text(text):
-    """清理文本：去掉换行、多余空格、控制字符"""
     if not text:
         return ''
-    # 替换换行符为空格
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-    # 去掉多余空格
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
 def extract_title_and_summary(item, soup):
-    """
-    从搜索结果项中提取标题和摘要
-    返回: (title, summary)
-    """
-    # 1. 提取标题
-    title = ''
-    title_elem = item.find('a')
-    if title_elem:
-        title = title_elem.text.strip()
-    else:
-        title = item.text.strip()
-    
-    # 清理标题
-    title = clean_text(title)
-    
-    # 如果标题里有分隔符，取第一部分
-    if '...' in title:
-        title = title.split('...')[0].strip()
-    
-    # 去掉常见后缀
-    suffixes = ['快资讯', '搜狐', '新浪', '网易', '腾讯', '今日头条', '百家号', '一点资讯', 'ZAKER', '大风号', '澎湃号', '媒体号']
-    for suf in suffixes:
-        if title.endswith(suf):
-            title = title[:-len(suf)].strip()
-    
-    # 去掉“X天前”
-    title = re.sub(r'\s*\d+天前$', '', title)
-    title = re.sub(r'\s*\d+小时前$', '', title)
-    title = re.sub(r'\s*\d+分钟前$', '', title)
-    
-    # 如果标题太长，截断
-    if len(title) > 60:
-        title = title[:60] + '...'
-    
-    # 2. 提取摘要
-    summary = ''
-    # 尝试找摘要文本（不同搜索引擎结构不同）
-    # 百度新闻：摘要通常在 class="c-abstract" 或 紧随链接的文本
-    summary_elem = item.find(class_='c-abstract')
-    if summary_elem:
-        summary = summary_elem.text.strip()
-    else:
-        # 如果没有摘要类，尝试取标题之外的文本
-        full_text = item.text.strip()
-        if title and full_text.startswith(title):
-            summary = full_text[len(title):].strip()
+    """提取标题和摘要，如果失败则返回空字符串"""
+    try:
+        title = ''
+        summary = ''
+        
+        # 提取链接文本作为标题
+        link_elem = item.find('a')
+        if link_elem:
+            title = link_elem.text.strip()
         else:
-            summary = full_text
-    
-    summary = clean_text(summary)
-    # 如果摘要太长，截断
-    if len(summary) > 150:
-        summary = summary[:150] + '...'
-    
-    return title, summary
+            title = item.text.strip()
+        
+        title = clean_text(title)
+        
+        # 清理标题后缀
+        if '...' in title:
+            title = title.split('...')[0].strip()
+        
+        suffixes = ['快资讯', '搜狐', '新浪', '网易', '腾讯', '今日头条', '百家号', '一点资讯', 'ZAKER', '大风号', '澎湃号', '媒体号']
+        for suf in suffixes:
+            if title.endswith(suf):
+                title = title[:-len(suf)].strip()
+        
+        title = re.sub(r'\s*\d+天前$', '', title)
+        title = re.sub(r'\s*\d+小时前$', '', title)
+        title = re.sub(r'\s*\d+分钟前$', '', title)
+        
+        if len(title) > 60:
+            title = title[:60] + '...'
+        
+        # 提取摘要
+        summary_elem = item.find(class_='c-abstract')
+        if summary_elem:
+            summary = summary_elem.text.strip()
+        else:
+            # 尝试取标题之外的文本
+            full_text = item.text.strip()
+            full_text = clean_text(full_text)
+            if title and full_text.startswith(title):
+                summary = full_text[len(title):].strip()
+            else:
+                summary = full_text
+        
+        summary = clean_text(summary)
+        if len(summary) > 150:
+            summary = summary[:150] + '...'
+        
+        return title, summary
+    except Exception as e:
+        logging.debug(f"提取标题摘要失败: {e}")
+        return '', ''
 
 def detect_scope(title):
-    """判断新闻范围"""
     if any(w in title for w in ["世界", "国际", "全球"]):
         return "世界"
     elif "广州" in title:
@@ -169,7 +151,6 @@ def detect_scope(title):
         return "全国"
 
 def detect_type(title):
-    """判断新闻类型"""
     type_map = {
         "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "建设", "进展", "完成", "交付", "贯通", "合龙"],
         "规划公示/获批": ["规划", "公示", "获批", "审议", "通过", "方案", "批复", "可研", "立项", "选址"],
@@ -184,7 +165,6 @@ def detect_type(title):
     return "综合"
 
 def extract_keywords(title):
-    """提取关键词标签"""
     kw_map = {
         '国铁': ['高铁', '铁路', '国铁', '动车', '普速'],
         '城际': ['城际'],
@@ -201,31 +181,31 @@ def extract_keywords(title):
             keywords.append(kw)
     return keywords if keywords else ["轨道"]
 
-# ============================================================
-# 主爬虫函数
-# ============================================================
 def fetch_news():
-    logging.info("🤖 全新爬虫启动！")
+    logging.info("🤖 爬虫启动")
     
-    # 1. 加载已有数据
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 加载现有数据 {len(all_news)} 条")
+        logging.info(f"📚 已有 {len(all_news)} 条数据")
     except FileNotFoundError:
         all_news = []
         logging.info("📚 从零开始")
+    except json.JSONDecodeError:
+        all_news = []
+        logging.warning("⚠️ 数据文件损坏，从零开始")
     
-    # 2. 去重索引
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
-    # 3. 加载数据源
     try:
         with open('sources.json', 'r', encoding='utf-8') as f:
             sources = json.load(f)
         logging.info(f"📡 加载 {len(sources)} 个数据源")
     except FileNotFoundError:
         logging.error("❌ 找不到 sources.json")
+        return
+    except json.JSONDecodeError:
+        logging.error("❌ sources.json 格式错误")
         return
     
     new_count = 0
@@ -236,12 +216,16 @@ def fetch_news():
     })
     
     for src in sources:
-        name = src.get('name', '未知来源')
+        name = src.get('name', '未知')
         base_url = src.get('url', '')
         selector = src.get('select', 'a')
         limit = src.get('limit_per_page', 10)
         pages = src.get('pages', 1)
         encoding = src.get('encoding', 'utf-8')
+        
+        if not base_url:
+            logging.warning(f"⚠️ {name} 缺少URL，跳过")
+            continue
         
         logging.info(f"🔍 抓取: {name}")
         
@@ -269,52 +253,56 @@ def fetch_news():
                 
                 count = 0
                 for item in items[:limit]:
-                    # 提取链接
-                    link_elem = item.find('a')
-                    if link_elem:
-                        link = link_elem.get('href')
-                    else:
-                        link = item.get('href')
-                    
-                    if not link:
+                    try:
+                        # 提取链接
+                        link_elem = item.find('a')
+                        if link_elem:
+                            link = link_elem.get('href')
+                        else:
+                            link = item.get('href')
+                        
+                        if not link:
+                            continue
+                        
+                        full_link = urljoin(page_url, link)
+                        
+                        # 提取标题和摘要
+                        title, summary = extract_title_and_summary(item, soup)
+                        
+                        if not title:
+                            continue
+                        
+                        if not any(k in title for k in KEYWORD_FILTERS):
+                            continue
+                        
+                        key = title[:20] + full_link[:50]
+                        if key in existing_keys:
+                            continue
+                        existing_keys.add(key)
+                        
+                        media = get_media_name(full_link) or name
+                        publish_date = datetime.now().strftime("%Y-%m-%d")
+                        scope = detect_scope(title)
+                        news_type = detect_type(title)
+                        keywords = extract_keywords(title)
+                        
+                        all_news.append({
+                            "日期": publish_date,
+                            "标题": title,
+                            "链接": full_link,
+                            "来源": media,
+                            "范围": scope,
+                            "关键词": keywords,
+                            "摘要": summary,
+                            "类型": news_type
+                        })
+                        count += 1
+                        new_count += 1
+                        
+                        time.sleep(random.uniform(0.2, 0.5))
+                    except Exception as e:
+                        logging.debug(f"处理条目失败: {e}")
                         continue
-                    
-                    full_link = urljoin(page_url, link)
-                    
-                    # 提取标题和摘要
-                    title, summary = extract_title_and_summary(item, soup)
-                    
-                    # 过滤：标题必须包含关键词
-                    if not any(k in title for k in KEYWORD_FILTERS):
-                        continue
-                    
-                    # 去重
-                    key = title[:20] + full_link[:50]
-                    if key in existing_keys:
-                        continue
-                    existing_keys.add(key)
-                    
-                    # 生成其他字段
-                    media = get_media_name(full_link) or name
-                    publish_date = datetime.now().strftime("%Y-%m-%d")
-                    scope = detect_scope(title)
-                    news_type = detect_type(title)
-                    keywords = extract_keywords(title)
-                    
-                    all_news.append({
-                        "日期": publish_date,
-                        "标题": title,
-                        "链接": full_link,
-                        "来源": media,
-                        "范围": scope,
-                        "关键词": keywords,
-                        "摘要": summary,
-                        "类型": news_type
-                    })
-                    count += 1
-                    new_count += 1
-                    
-                    time.sleep(random.uniform(0.2, 0.5))
                 
                 logging.info(f"✅ {name} 第 {page} 页新增 {count} 条")
                 
@@ -325,10 +313,8 @@ def fetch_news():
         
         time.sleep(random.uniform(1.0, 2.0))
     
-    # 按日期排序
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
-    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
     
