@@ -11,48 +11,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖']
 
-def clean_title(title):
-    """强制清理标题：只取前30个字，同时去掉常见后缀"""
-    if not title:
-        return title
-    
-    # 按常见分隔符切分，取前半部分
-    separators = ['：', ':', '｜', '|', '——', '—', '-', '·']
-    for sep in separators:
-        if sep in title:
-            parts = title.split(sep)
-            if len(parts) >= 2 and len(parts[0]) > 5:
-                title = parts[0].strip()
-                break
-    
-    # 如果标题还有括号，截断括号前
-    if '(' in title and not title.endswith(')'):
-        title = title.split('(')[0].strip()
-    if '（' in title and not title.endswith('）'):
-        title = title.split('（')[0].strip()
-    
-    # 去掉常见的尾部关键词
-    tails = ['快资讯', '搜狐', '新浪', '网易', '腾讯', '今日头条', '百家号', '一点资讯', 'ZAKER', '大风号', '澎湃号', '媒体号', 'APP', '客户端']
-    for tail in tails:
-        if title.endswith(tail):
-            title = title[:-len(tail)].strip()
-        if title.endswith(tail + '1天前') or title.endswith(tail + '2天前') or title.endswith(tail + '3天前'):
-            title = title[:-len(tail)-4].strip()
-    
-    # 去掉末尾的"1天前""2天前"等
-    import re
-    title = re.sub(r'\s*[0-9]+天前$', '', title)
-    title = re.sub(r'\s*[0-9]+小时前$', '', title)
-    title = re.sub(r'\s*[0-9]+分钟前$', '', title)
-    
-    # 如果标题还太长，截取前30个字
-    if len(title) > 30:
-        title = title[:30] + '...'
-    
-    return title.strip()
-
 def fetch_news():
-    logging.info("🤖 小机器人开始干活啦！（标题强制清理版）")
+    logging.info("🤖 小机器人开始干活啦！（最终版）")
     
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
@@ -113,8 +73,10 @@ def fetch_news():
                     if not any(k in raw_title for k in KEYWORD_FILTERS):
                         continue
 
-                    # 清理标题
-                    title = clean_title(raw_title)
+                    # 清理标题：只取前15个字，保证绝对没有尾巴
+                    title = raw_title[:15].strip()
+                    if len(raw_title) > 15:
+                        title += '...'
 
                     full_link = urljoin(page_url, link)
 
@@ -125,7 +87,6 @@ def fetch_news():
 
                     publish_date = datetime.now().strftime("%Y-%m-%d")
 
-                    # 范围判断
                     scope = "全国"
                     if any(w in raw_title for w in ["世界", "国际", "全球"]):
                         scope = "世界"
@@ -134,7 +95,6 @@ def fetch_news():
                     elif any(w in raw_title for w in ["广东", "深圳", "佛山", "东莞", "中山", "珠海"]):
                         scope = "广东省"
 
-                    # 类型判断
                     news_type = "综合"
                     type_map = {
                         "项目建设进展": ["封顶", "开工", "竣工", "通车", "开通", "投运", "动工", "建设", "进展", "完成", "交付", "贯通"],
@@ -149,7 +109,6 @@ def fetch_news():
                             news_type = t
                             break
 
-                    # 关键词标签
                     keywords = []
                     kw_map = {
                         '国铁': ['高铁', '铁路', '国铁', '动车'],
@@ -167,8 +126,6 @@ def fetch_news():
                     if not keywords:
                         keywords = ["轨道"]
 
-                    summary = title[:80] + ("..." if len(title) > 80 else "")
-
                     all_news.append({
                         "日期": publish_date,
                         "标题": title,
@@ -176,7 +133,7 @@ def fetch_news():
                         "来源": name,
                         "范围": scope,
                         "关键词": keywords,
-                        "摘要": summary,
+                        "摘要": title,
                         "类型": news_type
                     })
                     count += 1
@@ -197,7 +154,7 @@ def fetch_news():
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
 
-    logging.info(f"🎉 完成！本次新增 {new_count} 条，总新闻数 {len(all_news)} 条")
+    logging.info(f"🎉 完成！新增 {new_count} 条，共 {len(all_news)} 条")
 
 if __name__ == "__main__":
     fetch_news()
