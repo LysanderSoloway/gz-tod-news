@@ -96,7 +96,7 @@ def get_source_name(url):
     return domain
 
 def fetch_news():
-    logging.info("小机器人开始干活啦！")
+    logging.info("🤖 小机器人开始干活啦！（来源优化版）")
     
     # 1. 读取已有新闻
     try:
