@@ -90,7 +90,6 @@ def clean_text(text):
     return text.strip()
 
 def extract_title_and_summary(item, soup):
-    """从搜索结果页提取标题（摘要不从这里取，改为从详情页取）"""
     try:
         title = ''
         link_elem = item.find('a')
@@ -117,7 +116,7 @@ def extract_title_and_summary(item, soup):
 
 def fetch_article_summary(url, session, timeout=10):
     """
-    从新闻详情页提取正文前150字作为摘要
+    从新闻详情页提取正文前30字作为摘要
     """
     try:
         resp = session.get(url, timeout=timeout)
@@ -126,7 +125,6 @@ def fetch_article_summary(url, session, timeout=10):
         resp.encoding = 'utf-8'
         soup = BeautifulSoup(resp.text, 'html.parser')
         
-        # 尝试多种方式提取正文
         article_text = ''
         
         # 1. 找 article 标签
@@ -135,7 +133,7 @@ def fetch_article_summary(url, session, timeout=10):
             article_text = article.text.strip()
         
         # 2. 找常见的正文容器 class
-        if not article_text:
+        if not article_text or len(article_text) < 20:
             content_selectors = [
                 '.content', '.article-content', '.article-text', '.detail-content',
                 '.news-content', '.post-content', '.entry-content', '.text-content',
@@ -149,13 +147,13 @@ def fetch_article_summary(url, session, timeout=10):
                     break
         
         # 3. 找所有 p 标签，取前几个有内容的
-        if not article_text or len(article_text) < 50:
+        if not article_text or len(article_text) < 20:
             paragraphs = []
             for p in soup.find_all('p'):
                 text = p.text.strip()
-                if len(text) > 20 and not text.startswith('广告') and not text.startswith('声明'):
+                if len(text) > 20 and not text.startswith('广告') and not text.startswith('声明') and not text.startswith('原标题'):
                     paragraphs.append(text)
-                    if len(''.join(paragraphs)) > 150:
+                    if len(''.join(paragraphs)) > 50:
                         break
             if paragraphs:
                 article_text = ' '.join(paragraphs)
@@ -163,14 +161,30 @@ def fetch_article_summary(url, session, timeout=10):
         # 清理正文
         if article_text:
             article_text = clean_text(article_text)
-            # 去掉常见的版权信息
+            # 去掉常见的干扰文字
             article_text = re.sub(r'（.*?版权.*?）', '', article_text)
             article_text = re.sub(r'责任编辑.*?$', '', article_text)
             article_text = re.sub(r'来源.*?$', '', article_text)
+            article_text = re.sub(r'本报讯\s*', '', article_text)
+            article_text = re.sub(r'新华社\s*', '', article_text)
+            article_text = re.sub(r'记者.*?报道', '', article_text)
+            article_text = re.sub(r'通讯员.*?报道', '', article_text)
+            article_text = re.sub(r'【.*?】', '', article_text)
             article_text = article_text.strip()
-            # 取前150字
-            if len(article_text) > 150:
-                article_text = article_text[:150] + '...'
+            
+            # 只取前30字，保证在30字以内结束（以句号、问号、感叹号结束）
+            if len(article_text) > 30:
+                # 尝试在30字附近找到合适的断句位置
+                cut_text = article_text[:35]
+                # 找句号、问号、感叹号
+                for punct in ['。', '！', '？', '；', '，']:
+                    pos = cut_text.rfind(punct)
+                    if pos > 10 and pos <= 30:
+                        article_text = article_text[:pos+1]
+                        break
+                # 如果没找到合适的标点，直接取30字
+                if len(article_text) > 30:
+                    article_text = article_text[:30] + '...'
             return article_text
         return ''
     except Exception as e:
@@ -227,7 +241,7 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
     return None
 
 def fetch_news():
-    logging.info("🤖 爬虫启动（详情页抓取摘要版）")
+    logging.info("🤖 爬虫启动（30字内摘要版）")
     
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
@@ -325,9 +339,8 @@ def fetch_news():
                             continue
                         existing_keys.add(key)
                         
-                        # ===== 进入详情页抓取摘要 =====
+                        # ===== 进入详情页抓取摘要（30字以内） =====
                         summary = fetch_article_summary(full_link, session, timeout=10)
-                        # 如果详情页抓取失败，留空
                         if not summary:
                             summary = ''
                         
@@ -350,7 +363,6 @@ def fetch_news():
                         count += 1
                         new_count += 1
                         
-                        # 详情页抓取后稍长延时，避免被封
                         time.sleep(random.uniform(0.5, 1.2))
                     except Exception as e:
                         logging.debug(f"处理条目失败: {e}")
