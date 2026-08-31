@@ -1127,9 +1127,9 @@
             .chart-section { padding: 0 16px; }
             .chart-grid { grid-template-columns: 1fr; }
             .quarterly-grid { grid-template-columns: 1fr 1fr; }
-            .toolbar { padding: 0 16px; }
-            .toolbar input { min-width: 120px; font-size: 12px; }
-            .toolbar select { min-width: 80px; font-size: 12px; }
+            .toolbar { padding: 0 16px; flex-direction: column; align-items: stretch; }
+            .toolbar input { min-width: 100%; }
+            .toolbar select { min-width: 100%; }
             .table-wrap { padding: 0 16px; }
             footer { padding: 16px; }
             .back-to-top { bottom: 20px; right: 20px; width: 40px; height: 40px; font-size: 16px; }
@@ -1209,16 +1209,26 @@
             <option value="广东省">📗 广东省</option>
             <option value="广州市">📙 广州市</option>
         </select>
-        <select id="keywordFilter" onchange="onSearchChange()">
-            <option value="all">全部关键词</option>
-            <option value="国铁">国铁</option>
-            <option value="城际">城际</option>
-            <option value="地铁">地铁</option>
-            <option value="轨道">轨道</option>
-            <option value="综合交通枢纽">综合交通枢纽</option>
-            <option value="综合开发">综合开发</option>
-            <option value="投融资">投融资</option>
-            <option value="可持续经营运营">可持续经营运营</option>
+        <select id="subjectFilter" onchange="onSearchChange()">
+            <option value="all">全部主体</option>
+            <option value="国铁">🚄 国铁</option>
+            <option value="铁路">🚂 铁路</option>
+            <option value="城际">🚆 城际</option>
+            <option value="地铁">🚇 地铁</option>
+        </select>
+        <select id="areaFilter" onchange="onSearchChange()">
+            <option value="all">全部领域</option>
+            <option value="规划">📐 规划</option>
+            <option value="城市设计">🏙️ 城市设计</option>
+            <option value="建筑">🏗️ 建筑</option>
+            <option value="交通">🚦 交通</option>
+            <option value="产业">🏭 产业</option>
+            <option value="投融资">💰 投融资</option>
+            <option value="招商">🤝 招商</option>
+            <option value="运营">⚙️ 运营</option>
+            <option value="站城融合">🏙️ 站城融合</option>
+            <option value="TOD">🏢 TOD</option>
+            <option value="获奖">🏆 获奖</option>
         </select>
         <select id="typeFilter" onchange="onSearchChange()">
             <option value="all">全部类型</option>
@@ -1381,8 +1391,7 @@
             if (title.length > 40) title = title.substring(0, 40) + '...';
             return title.trim() || '无标题';
         }
-
-        // ============================================================
+                // ============================================================
         // 收藏功能
         // ============================================================
         function getNewsId(item) {
@@ -1604,7 +1613,8 @@
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase();
             const scopeFilter = document.getElementById('scopeFilter').value;
-            const keywordFilter = document.getElementById('keywordFilter').value;
+            const subjectFilter = document.getElementById('subjectFilter').value;
+            const areaFilter = document.getElementById('areaFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
 
             return allNewsData.filter(item => {
@@ -1621,8 +1631,11 @@
                     if (text.indexOf(filter) === -1) return false;
                 }
                 if (scopeFilter !== 'all' && scope !== scopeFilter) return false;
-                if (keywordFilter !== 'all') {
-                    if (!keywords.includes(keywordFilter)) return false;
+                if (subjectFilter !== 'all') {
+                    if (!keywords.includes(subjectFilter)) return false;
+                }
+                if (areaFilter !== 'all') {
+                    if (!keywords.includes(areaFilter)) return false;
                 }
                 if (typeFilter !== 'all' && type !== typeFilter) return false;
                 if (archiveMonth) {
