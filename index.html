@@ -736,6 +736,7 @@
         .kw-tag-integrate { background:#f5f5f5; color:#37474f; }
         .kw-tag-tod { background:#fff8e1; color:#b8860b; }
         .kw-tag-award { background:#fff1f0; color:#b71c1c; }
+        .kw-tag-subject { background:#dce4f0; color:#3a4a7a; }
         [data-theme="dark"] .kw-tag-planning { background:#1a2a4a; color:#7aaac5; }
         [data-theme="dark"] .kw-tag-urban { background:#3a1a2a; color:#c58aaa; }
         [data-theme="dark"] .kw-tag-arch { background:#3a2a1a; color:#d0aa6a; }
@@ -747,7 +748,21 @@
         [data-theme="dark"] .kw-tag-integrate { background:#2a2a2a; color:#8a8a8a; }
         [data-theme="dark"] .kw-tag-tod { background:#2a2a1a; color:#b5aa6a; }
         [data-theme="dark"] .kw-tag-award { background:#3a1a1a; color:#b57a6a; }
-        .kw-cell { display:grid; grid-template-columns:repeat(3, 1fr); gap:3px 5px; align-items:flex-start; min-width:75px; line-height:1.5; }
+        [data-theme="dark"] .kw-tag-subject { background:#2a2a3a; color:#8a8ab5; }
+        /* 关键词列：每行固定2个标签，保证上下对齐 */
+        .kw-cell {
+            display:grid;
+            grid-template-columns:repeat(2, 1fr);
+            gap:3px 6px;
+            align-items:center;
+            min-width:75px;
+            line-height:1.5;
+        }
+        .kw-cell .kw-tag {
+            text-align:center;
+            width:100%;
+            justify-self:center;
+        }
         a { color:var(--accent); text-decoration:none; }
         a:hover { color:var(--accent-hover); text-decoration:underline; }
         [data-theme="dark"] .ttl a { color:var(--accent-light); }
@@ -1279,7 +1294,8 @@
         // ===== 主体与领域列表 =====
         const SUBJECTS = ['国铁', '铁路', '城际', '地铁'];
         const AREAS = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖'];
-                // ===== 媒体映射 =====
+
+        // ===== 媒体映射 =====
         const MEDIA_MAP = {
             'people.com.cn': '人民网', 'xinhuanet.com': '新华网', 'gmw.cn': '光明网',
             'cnr.cn': '央广网', 'cctv.com': '央视网', 'china.com.cn': '中国网',
@@ -1407,8 +1423,9 @@
             return map[subject] || 'subject-railway';
         }
 
-        function getAreaClass(area) {
-            const map = {
+        // ===== 获取关键词样式类（支持主体词和领域词） =====
+        function getKeywordClass(keyword) {
+            const areaMap = {
                 '规划': 'kw-tag-planning',
                 '城市设计': 'kw-tag-urban',
                 '建筑': 'kw-tag-arch',
@@ -1421,7 +1438,10 @@
                 'TOD': 'kw-tag-tod',
                 '获奖': 'kw-tag-award'
             };
-            return map[area] || 'kw-tag-tod';
+            if (areaMap[keyword]) return areaMap[keyword];
+            // 主体词用统一的样式
+            if (SUBJECTS.includes(keyword) || keyword === '轨道') return 'kw-tag-subject';
+            return 'kw-tag-tod';
         }
 
         // ============================================================
@@ -1551,14 +1571,16 @@
                     const scope = item.范围 || '全国';
                     const subject = extractSubject(item.关键词);
                     const areas = extractAreas(item.关键词);
-                    const areaTags = areas.map(a => `<span class="type-tag-sm kw-tag-${a}">${a}</span>`).join(' ');
+                    // 显示所有关键词（主体+领域）
+                    const allKw = item.关键词 || [];
+                    const kwTags = allKw.map(k => `<span class="type-tag-sm ${getKeywordClass(k)}">${k}</span>`).join(' ');
                     html += `
                         <div class="modal-timeline-item">
                             <div class="modal-timeline-date">${item.日期 || ''}</div>
                             <div class="modal-timeline-body">
                                 <div class="title"><a href="${item.链接 || '#'}" target="_blank">${cleanTitle(item.标题)}</a></div>
                                 <span class="type-tag-sm">${subject}</span>
-                                ${areaTags}
+                                ${kwTags}
                                 <span class="scope-tag-sm">${scope}</span>
                             </div>
                         </div>
@@ -1665,8 +1687,8 @@
                 const keywords = item.关键词 || [];
                 const subject = extractSubject(keywords);
                 const subjectClass = getSubjectClass(subject);
-                const areas = extractAreas(keywords);
-                const kwHtml = areas.map(a => `<span class="kw-tag ${getAreaClass(a)}">${a}</span>`).join(' ');
+                // 关键词列显示所有关键词（主体词+领域词），用统一的标签样式
+                const kwHtml = keywords.map(k => `<span class="kw-tag ${getKeywordClass(k)}">${k}</span>`).join(' ');
                 const project = detectProject(item.标题 || '');
                 let trackBtn = '';
                 if (project) {
@@ -1793,7 +1815,7 @@
                     '标题': cleanTitle(item.标题 || ''),
                     '链接': item.链接 || '#',
                     '来源': getMediaName(item),
-                    '关键词': extractAreas(item.关键词 || []).join('、')
+                    '关键词': (item.关键词 || []).join('、')
                 }));
             } else {
                 if (!allNewsData || allNewsData.length === 0) { showToast('暂无数据可导出'); return; }
@@ -1804,7 +1826,7 @@
                     '标题': cleanTitle(item.标题 || ''),
                     '链接': item.链接 || '#',
                     '来源': getMediaName(item),
-                    '关键词': extractAreas(item.关键词 || []).join('、')
+                    '关键词': (item.关键词 || []).join('、')
                 }));
             }
 
