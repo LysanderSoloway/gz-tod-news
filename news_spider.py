@@ -14,9 +14,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 SUBJECTS = ['国铁', '铁路', '城际', '地铁']
 AREAS = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
 
-# 保留原有的关键词过滤列表（用于兼容旧逻辑，但实际过滤时会用上面的组合）
-KEYWORD_FILTERS = SUBJECTS + AREAS  # 仅用于旧有检查，但组合逻辑会覆盖
-
 MEDIA_MAP = {
     'people.com.cn': '人民网', 'xinhuanet.com': '新华网', 'gmw.cn': '光明网',
     'cnr.cn': '央广网', 'cctv.com': '央视网', 'china.com.cn': '中国网',
@@ -93,9 +90,9 @@ def clean_text(text):
     return text.strip()
 
 def extract_title_and_summary(item, soup):
+    """从搜索结果页提取标题（摘要不从这里取，改为从详情页取）"""
     try:
         title = ''
-        summary = ''
         link_elem = item.find('a')
         if link_elem:
             title = link_elem.text.strip()
@@ -113,23 +110,72 @@ def extract_title_and_summary(item, soup):
         title = re.sub(r'\s*\d+分钟前$', '', title)
         if len(title) > 60:
             title = title[:60] + '...'
-        summary_elem = item.find(class_='c-abstract')
-        if summary_elem:
-            summary = summary_elem.text.strip()
-        else:
-            full_text = item.text.strip()
-            full_text = clean_text(full_text)
-            if title and full_text.startswith(title):
-                summary = full_text[len(title):].strip()
-            else:
-                summary = full_text
-        summary = clean_text(summary)
-        if len(summary) > 150:
-            summary = summary[:150] + '...'
-        return title, summary
+        return title
     except Exception as e:
-        logging.debug(f"提取标题摘要失败: {e}")
-        return '', ''
+        logging.debug(f"提取标题失败: {e}")
+        return ''
+
+def fetch_article_summary(url, session, timeout=10):
+    """
+    从新闻详情页提取正文前150字作为摘要
+    """
+    try:
+        resp = session.get(url, timeout=timeout)
+        if resp.status_code != 200:
+            return ''
+        resp.encoding = 'utf-8'
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        # 尝试多种方式提取正文
+        article_text = ''
+        
+        # 1. 找 article 标签
+        article = soup.find('article')
+        if article:
+            article_text = article.text.strip()
+        
+        # 2. 找常见的正文容器 class
+        if not article_text:
+            content_selectors = [
+                '.content', '.article-content', '.article-text', '.detail-content',
+                '.news-content', '.post-content', '.entry-content', '.text-content',
+                '.main-content', '.article-body', '.news-body', '.detail-body',
+                '.content-body', '.article-detail', '.news-detail'
+            ]
+            for selector in content_selectors:
+                elem = soup.select_one(selector)
+                if elem:
+                    article_text = elem.text.strip()
+                    break
+        
+        # 3. 找所有 p 标签，取前几个有内容的
+        if not article_text or len(article_text) < 50:
+            paragraphs = []
+            for p in soup.find_all('p'):
+                text = p.text.strip()
+                if len(text) > 20 and not text.startswith('广告') and not text.startswith('声明'):
+                    paragraphs.append(text)
+                    if len(''.join(paragraphs)) > 150:
+                        break
+            if paragraphs:
+                article_text = ' '.join(paragraphs)
+        
+        # 清理正文
+        if article_text:
+            article_text = clean_text(article_text)
+            # 去掉常见的版权信息
+            article_text = re.sub(r'（.*?版权.*?）', '', article_text)
+            article_text = re.sub(r'责任编辑.*?$', '', article_text)
+            article_text = re.sub(r'来源.*?$', '', article_text)
+            article_text = article_text.strip()
+            # 取前150字
+            if len(article_text) > 150:
+                article_text = article_text[:150] + '...'
+            return article_text
+        return ''
+    except Exception as e:
+        logging.debug(f"提取详情页摘要失败 {url}: {e}")
+        return ''
 
 def detect_scope(title):
     if any(w in title for w in ["世界", "国际", "全球"]):
@@ -156,7 +202,6 @@ def detect_type(title):
     return "综合"
 
 def extract_keywords(title):
-    # 依然从标题提取关键词标签（主体词+领域词）
     subjects = ['国铁', '铁路', '城际', '地铁']
     areas = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
     keywords = []
@@ -182,7 +227,7 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
     return None
 
 def fetch_news():
-    logging.info("🤖 爬虫启动（组合关键词过滤版）")
+    logging.info("🤖 爬虫启动（详情页抓取摘要版）")
     
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
@@ -264,23 +309,27 @@ def fetch_news():
                             continue
                         
                         full_link = urljoin(page_url, link)
-                        title, summary = extract_title_and_summary(item, soup)
+                        title = extract_title_and_summary(item, soup)
                         
                         if not title:
                             continue
                         
-                        # ===== 新的组合过滤逻辑 =====
-                        # 检查是否至少包含一个主体词和一个领域词
+                        # ===== 组合过滤逻辑 =====
                         has_subject = any(s in title for s in SUBJECTS)
                         has_area = any(a in title for a in AREAS)
                         if not (has_subject and has_area):
                             continue
                         
-                        # 去重
                         key = title[:20] + full_link[:50]
                         if key in existing_keys:
                             continue
                         existing_keys.add(key)
+                        
+                        # ===== 进入详情页抓取摘要 =====
+                        summary = fetch_article_summary(full_link, session, timeout=10)
+                        # 如果详情页抓取失败，留空
+                        if not summary:
+                            summary = ''
                         
                         media = get_media_name(full_link) or name
                         publish_date = datetime.now().strftime("%Y-%m-%d")
@@ -301,7 +350,8 @@ def fetch_news():
                         count += 1
                         new_count += 1
                         
-                        time.sleep(random.uniform(0.2, 0.5))
+                        # 详情页抓取后稍长延时，避免被封
+                        time.sleep(random.uniform(0.5, 1.2))
                     except Exception as e:
                         logging.debug(f"处理条目失败: {e}")
                         continue
@@ -311,9 +361,9 @@ def fetch_news():
             except Exception as e:
                 logging.error(f"❌ {name} 第 {page} 页出错: {e}")
             
-            time.sleep(random.uniform(0.5, 1.5))
+            time.sleep(random.uniform(0.8, 1.8))
         
-        time.sleep(random.uniform(1.0, 2.0))
+        time.sleep(random.uniform(1.5, 3.0))
     
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
