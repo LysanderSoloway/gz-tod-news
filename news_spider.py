@@ -87,6 +87,20 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
+def fetch_with_retry(url, headers, timeout=20, retries=2):
+    """带重试的请求函数"""
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            return resp
+        except Exception as e:
+            if attempt < retries:
+                logging.debug(f"重试 {url} (第{attempt+1}次)")
+                time.sleep(1)
+            else:
+                raise e
+    return None
+
 def extract_title_and_summary(item, soup):
     try:
         title = ''
@@ -177,13 +191,13 @@ def extract_keywords(title):
     return keywords if keywords else ["轨道"]
 
 def fetch_news():
-    logging.info("🤖 爬虫启动（增量追加版）")
+    logging.info("🤖 爬虫启动（优化版 - 23个数据源）")
     
-    # ===== 关键改动：读取旧数据，新数据加在后面 =====
+    # 加载旧数据
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 已有 {len(all_news)} 条数据，新数据将追加在后面")
+        logging.info(f"📚 已有 {len(all_news)} 条数据")
     except FileNotFoundError:
         all_news = []
         logging.info("📚 从零开始")
@@ -191,7 +205,6 @@ def fetch_news():
         all_news = []
         logging.warning("⚠️ 数据文件损坏，从零开始")
     
-    # 建立去重索引（用标题+链接）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
     try:
@@ -236,12 +249,12 @@ def fetch_news():
                     page_url = base_url + f'?page={page}'
             
             try:
-                resp = session.get(page_url, timeout=20)
-                resp.encoding = encoding
-                if resp.status_code != 200:
-                    logging.warning(f"⚠️ {name} 状态码 {resp.status_code}")
+                resp = fetch_with_retry(page_url, session.headers, timeout=20)
+                if resp is None or resp.status_code != 200:
+                    logging.warning(f"⚠️ {name} 第 {page} 页访问失败")
                     continue
                 
+                resp.encoding = encoding
                 soup = BeautifulSoup(resp.text, 'html.parser')
                 items = soup.select(selector)
                 if not items:
@@ -307,10 +320,8 @@ def fetch_news():
         
         time.sleep(random.uniform(1.0, 2.0))
     
-    # 按日期排序（新在前）
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
-    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
     
