@@ -10,7 +10,12 @@ import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖', '国铁']
+# ===== 关键词拆分：主体词 + 领域词 =====
+SUBJECTS = ['国铁', '铁路', '城际', '地铁']
+AREAS = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
+
+# 保留原有的关键词过滤列表（用于兼容旧逻辑，但实际过滤时会用上面的组合）
+KEYWORD_FILTERS = SUBJECTS + AREAS  # 仅用于旧有检查，但组合逻辑会覆盖
 
 MEDIA_MAP = {
     'people.com.cn': '人民网', 'xinhuanet.com': '新华网', 'gmw.cn': '光明网',
@@ -87,48 +92,27 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
-def fetch_with_retry(url, headers, timeout=20, retries=2):
-    """带重试的请求函数"""
-    for attempt in range(retries + 1):
-        try:
-            resp = requests.get(url, headers=headers, timeout=timeout)
-            return resp
-        except Exception as e:
-            if attempt < retries:
-                logging.debug(f"重试 {url} (第{attempt+1}次)")
-                time.sleep(1)
-            else:
-                raise e
-    return None
-
 def extract_title_and_summary(item, soup):
     try:
         title = ''
         summary = ''
-        
         link_elem = item.find('a')
         if link_elem:
             title = link_elem.text.strip()
         else:
             title = item.text.strip()
-        
         title = clean_text(title)
-        
         if '...' in title:
             title = title.split('...')[0].strip()
-        
         suffixes = ['快资讯', '搜狐', '新浪', '网易', '腾讯', '今日头条', '百家号', '一点资讯', 'ZAKER', '大风号', '澎湃号', '媒体号']
         for suf in suffixes:
             if title.endswith(suf):
                 title = title[:-len(suf)].strip()
-        
         title = re.sub(r'\s*\d+天前$', '', title)
         title = re.sub(r'\s*\d+小时前$', '', title)
         title = re.sub(r'\s*\d+分钟前$', '', title)
-        
         if len(title) > 60:
             title = title[:60] + '...'
-        
         summary_elem = item.find(class_='c-abstract')
         if summary_elem:
             summary = summary_elem.text.strip()
@@ -139,11 +123,9 @@ def extract_title_and_summary(item, soup):
                 summary = full_text[len(title):].strip()
             else:
                 summary = full_text
-        
         summary = clean_text(summary)
         if len(summary) > 150:
             summary = summary[:150] + '...'
-        
         return title, summary
     except Exception as e:
         logging.debug(f"提取标题摘要失败: {e}")
@@ -174,26 +156,34 @@ def detect_type(title):
     return "综合"
 
 def extract_keywords(title):
-    kw_map = {
-        '国铁': ['高铁', '铁路', '国铁', '动车', '普速'],
-        '城际': ['城际'],
-        '地铁': ['地铁'],
-        '轨道': ['轨道', '轨交', '轻轨'],
-        '综合交通枢纽': ['枢纽', '综合枢纽'],
-        '综合开发': ['TOD', '综合开发', '上盖', '站城', '物业开发'],
-        '投融资': ['融资', '投资', '资本', '基金', '债券'],
-        '可持续经营运营': ['可持续', '经营', '运营']
-    }
+    # 依然从标题提取关键词标签（主体词+领域词）
+    subjects = ['国铁', '铁路', '城际', '地铁']
+    areas = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
     keywords = []
-    for kw, words in kw_map.items():
-        if any(w in title for w in words):
-            keywords.append(kw)
+    for s in subjects:
+        if s in title:
+            keywords.append(s)
+    for a in areas:
+        if a in title:
+            keywords.append(a)
     return keywords if keywords else ["轨道"]
 
+def fetch_with_retry(url, headers, timeout=20, retries=2):
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers=headers, timeout=timeout)
+            return resp
+        except Exception as e:
+            if attempt < retries:
+                logging.debug(f"重试 {url} (第{attempt+1}次)")
+                time.sleep(1)
+            else:
+                raise e
+    return None
+
 def fetch_news():
-    logging.info("🤖 爬虫启动（优化版 - 23个数据源）")
+    logging.info("🤖 爬虫启动（组合关键词过滤版）")
     
-    # 加载旧数据
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
@@ -279,9 +269,14 @@ def fetch_news():
                         if not title:
                             continue
                         
-                        if not any(k in title for k in KEYWORD_FILTERS):
+                        # ===== 新的组合过滤逻辑 =====
+                        # 检查是否至少包含一个主体词和一个领域词
+                        has_subject = any(s in title for s in SUBJECTS)
+                        has_area = any(a in title for a in AREAS)
+                        if not (has_subject and has_area):
                             continue
                         
+                        # 去重
                         key = title[:20] + full_link[:50]
                         if key in existing_keys:
                             continue
