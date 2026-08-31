@@ -651,8 +651,6 @@
         .ttl a { color:var(--accent); text-decoration:none; transition:color 0.2s; }
         .ttl a:hover { color:var(--accent-hover); text-decoration:underline; }
         .media { min-width:120px; font-size:12px; color:var(--muted); }
-        .content { min-width:200px; font-size:12px; color:var(--muted-light); line-height:1.55; }
-        [data-theme="dark"] .content { color:var(--muted); }
         .star-btn {
             background:none;
             border:none;
@@ -1056,7 +1054,6 @@
             .date { width:75px; font-size:11px; }
             .media { min-width:80px; font-size:11px; }
             .ttl { font-size:12px; min-width:120px; flex-wrap:wrap; }
-            .content { min-width:120px; font-size:11px; }
             th { font-size:10px; padding:8px 6px; }
             td { padding:8px 6px; font-size:12px; }
             .table-wrap table thead { display: none; }
@@ -1092,14 +1089,12 @@
             .table-wrap table tbody tr td.ttl:before { content: '标题'; }
             .table-wrap table tbody tr td.media:before { content: '来源'; }
             .table-wrap table tbody tr td.kw-cell:before { content: '关键词'; }
-            .table-wrap table tbody tr td.content:before { content: '摘要'; }
             .table-wrap table tbody tr td.num { display: none; }
             .table-wrap table tbody tr td.scope-col,
             .table-wrap table tbody tr td.subject-col,
             .table-wrap table tbody tr td.ttl,
             .table-wrap table tbody tr td.media,
             .table-wrap table tbody tr td.kw-cell,
-            .table-wrap table tbody tr td.content,
             .table-wrap table tbody tr td.date {
                 display: flex;
                 flex-wrap: wrap;
@@ -1239,10 +1234,9 @@
                         <th>标题</th>
                         <th>媒体/来源</th>
                         <th>关键词</th>
-                        <th>摘要</th>
                     </tr>
                 </thead>
-                <tbody id="newsTable"><tr><td colspan="8" class="loading">⏳ 正在读取新闻数据...</td></tr></tbody>
+                <tbody id="newsTable"><tr><td colspan="7" class="loading">⏳ 正在读取新闻数据...</td></tr></tbody>
             </table>
         </div>
         <div class="pagination-bar" id="paginationBar">
@@ -1384,18 +1378,16 @@
             return title.trim() || '无标题';
         }
 
-        // ===== 【关键改动】提取主体：包含"轨道"自动归入"铁路"，默认归入"铁路" =====
+        // ===== 提取主体：包含"轨道"自动归入"铁路"，默认归入"铁路" =====
         function extractSubject(keywords) {
             if (!keywords || !Array.isArray(keywords)) return '铁路';
-            // 如果包含"轨道"，归入"铁路"
             if (keywords.includes('轨道')) return '铁路';
             for (const s of SUBJECTS) {
                 if (keywords.includes(s)) return s;
             }
-            return '铁路';  // 默认归入铁路
+            return '铁路';
         }
 
-        // ===== 提取领域关键词 =====
         function extractAreas(keywords) {
             if (!keywords || !Array.isArray(keywords)) return [];
             const result = [];
@@ -1565,7 +1557,6 @@
                             <div class="modal-timeline-date">${item.日期 || ''}</div>
                             <div class="modal-timeline-body">
                                 <div class="title"><a href="${item.链接 || '#'}" target="_blank">${cleanTitle(item.标题)}</a></div>
-                                <div class="summary">${item.摘要 || ''}</div>
                                 <span class="type-tag-sm">${subject}</span>
                                 ${areaTags}
                                 <span class="scope-tag-sm">${scope}</span>
@@ -1618,7 +1609,6 @@
             return allNewsData.filter(item => {
                 const title = cleanTitle(item.标题 || '');
                 const media = getMediaName(item);
-                const content = item.摘要 || '';
                 const scope = item.范围 || '全国';
                 const keywords = item.关键词 || [];
                 const date = item.日期 || '';
@@ -1626,7 +1616,7 @@
                 const areas = extractAreas(keywords);
 
                 if (filter) {
-                    const text = (title + media + content).toLowerCase();
+                    const text = (title + media).toLowerCase();
                     if (text.indexOf(filter) === -1) return false;
                 }
                 if (scopeFilter !== 'all' && scope !== scopeFilter) return false;
@@ -1661,7 +1651,7 @@
             if (total === 0) {
                 let msg = '📭 暂无匹配的新闻';
                 if (showFavoritesOnly) msg = '⭐ 暂无收藏的新闻，点击 ⭐ 收藏喜欢的新闻吧！';
-                tbody.innerHTML = `<tr><td colspan="8" class="empty-msg">${msg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">${msg}</td></tr>`;
                 updatePagination(total);
                 document.getElementById('countTip').textContent = '共 0 条';
                 return;
@@ -1701,7 +1691,6 @@
                     </td>
                     <td class="media" data-label="来源">${cleanedMedia}</td>
                     <td class="kw-cell" data-label="关键词">${kwHtml}</td>
-                    <td class="content" data-label="摘要">${item.摘要 || ''}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1804,8 +1793,7 @@
                     '标题': cleanTitle(item.标题 || ''),
                     '链接': item.链接 || '#',
                     '来源': getMediaName(item),
-                    '关键词': extractAreas(item.关键词 || []).join('、'),
-                    '摘要': item.摘要 || ''
+                    '关键词': extractAreas(item.关键词 || []).join('、')
                 }));
             } else {
                 if (!allNewsData || allNewsData.length === 0) { showToast('暂无数据可导出'); return; }
@@ -1816,12 +1804,11 @@
                     '标题': cleanTitle(item.标题 || ''),
                     '链接': item.链接 || '#',
                     '来源': getMediaName(item),
-                    '关键词': extractAreas(item.关键词 || []).join('、'),
-                    '摘要': item.摘要 || ''
+                    '关键词': extractAreas(item.关键词 || []).join('、')
                 }));
             }
 
-            const headers = ['日期', '范围', '主体', '标题', '链接', '来源', '关键词', '摘要'];
+            const headers = ['日期', '范围', '主体', '标题', '链接', '来源', '关键词'];
             let csv = '\uFEFF' + headers.join(',') + '\n';
             data.forEach(row => {
                 const cols = headers.map(h => {
@@ -1912,7 +1899,6 @@
         function generateStats(data) {
             if (!data || data.length === 0) return;
 
-            // 主体统计
             const subjectCount = { '国铁': 0, '铁路': 0, '城际': 0, '地铁': 0 };
             data.forEach(item => {
                 const subject = extractSubject(item.关键词 || []);
@@ -1941,7 +1927,6 @@
                 subjectContainer.appendChild(div);
             });
 
-            // 地理范围统计
             const scopeCount = { '世界': 0, '全国': 0, '广东省': 0, '广州市': 0 };
             data.forEach(item => {
                 const scope = item.范围 || '全国';
@@ -2064,7 +2049,6 @@
                 `;
             });
 
-            // 领域关键词热度
             const areaCount = {};
             data.forEach(item => {
                 const areas = extractAreas(item.关键词 || []);
@@ -2222,7 +2206,7 @@
                 .catch(error => {
                     console.error('加载失败:', error);
                     document.getElementById('newsTable').innerHTML =
-                        '<tr><td colspan="8" class="error-msg">⚠️ 暂时没有数据，请先去 Actions 页面手动运行一次 "每周一自动抓取新闻"</td></tr>';
+                        '<tr><td colspan="7" class="error-msg">⚠️ 暂时没有数据，请先去 Actions 页面手动运行一次 "每周一自动抓取新闻"</td></tr>';
                     document.getElementById('lastUpdate').textContent = '暂无数据';
                     document.getElementById('countTip').textContent = '共 0 条';
                     updatePagination(0);
