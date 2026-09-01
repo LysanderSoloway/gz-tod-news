@@ -183,7 +183,7 @@
     "pages": 1,
     "encoding": "utf-8"
   },
-    {
+  {
     "name": "中铁一局官网",
     "url": "http://www.crfeb.com.cn",
     "select": "a[title]",
@@ -263,7 +263,6 @@
     "pages": 1,
     "encoding": "utf-8"
   },
-    ,
   {
     "name": "Railway Gazette",
     "url": "https://www.railwaygazette.com",
