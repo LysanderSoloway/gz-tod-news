@@ -10,7 +10,6 @@ import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# ===== 关键词拆分：主体词 + 领域词 =====
 SUBJECTS = ['国铁', '铁路', '城际', '地铁']
 AREAS = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
 
@@ -115,24 +114,16 @@ def extract_title_and_summary(item, soup):
         return ''
 
 def fetch_article_summary(url, session, timeout=10):
-    """
-    从新闻详情页提取正文前30字作为摘要
-    """
     try:
         resp = session.get(url, timeout=timeout)
         if resp.status_code != 200:
             return ''
         resp.encoding = 'utf-8'
         soup = BeautifulSoup(resp.text, 'html.parser')
-        
         article_text = ''
-        
-        # 1. 找 article 标签
         article = soup.find('article')
         if article:
             article_text = article.text.strip()
-        
-        # 2. 找常见的正文容器 class
         if not article_text or len(article_text) < 20:
             content_selectors = [
                 '.content', '.article-content', '.article-text', '.detail-content',
@@ -145,8 +136,6 @@ def fetch_article_summary(url, session, timeout=10):
                 if elem:
                     article_text = elem.text.strip()
                     break
-        
-        # 3. 找所有 p 标签，取前几个有内容的
         if not article_text or len(article_text) < 20:
             paragraphs = []
             for p in soup.find_all('p'):
@@ -157,11 +146,8 @@ def fetch_article_summary(url, session, timeout=10):
                         break
             if paragraphs:
                 article_text = ' '.join(paragraphs)
-        
-        # 清理正文
         if article_text:
             article_text = clean_text(article_text)
-            # 去掉常见的干扰文字
             article_text = re.sub(r'（.*?版权.*?）', '', article_text)
             article_text = re.sub(r'责任编辑.*?$', '', article_text)
             article_text = re.sub(r'来源.*?$', '', article_text)
@@ -171,18 +157,13 @@ def fetch_article_summary(url, session, timeout=10):
             article_text = re.sub(r'通讯员.*?报道', '', article_text)
             article_text = re.sub(r'【.*?】', '', article_text)
             article_text = article_text.strip()
-            
-            # 只取前30字，保证在30字以内结束（以句号、问号、感叹号结束）
             if len(article_text) > 30:
-                # 尝试在30字附近找到合适的断句位置
                 cut_text = article_text[:35]
-                # 找句号、问号、感叹号
                 for punct in ['。', '！', '？', '；', '，']:
                     pos = cut_text.rfind(punct)
                     if pos > 10 and pos <= 30:
                         article_text = article_text[:pos+1]
                         break
-                # 如果没找到合适的标点，直接取30字
                 if len(article_text) > 30:
                     article_text = article_text[:30] + '...'
             return article_text
@@ -241,12 +222,13 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
     return None
 
 def fetch_news():
-    logging.info("🤖 爬虫启动（30字内摘要版）")
+    logging.info("🤖 爬虫启动（增量追加版 - 永不覆盖）")
     
+    # ===== 关键：读取旧数据，新数据追加在后面 =====
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 已有 {len(all_news)} 条数据")
+        logging.info(f"📚 已有 {len(all_news)} 条数据，新数据将追加在后面")
     except FileNotFoundError:
         all_news = []
         logging.info("📚 从零开始")
@@ -254,6 +236,7 @@ def fetch_news():
         all_news = []
         logging.warning("⚠️ 数据文件损坏，从零开始")
     
+    # 建立去重索引（用标题+链接）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
     try:
@@ -328,7 +311,6 @@ def fetch_news():
                         if not title:
                             continue
                         
-                        # ===== 组合过滤逻辑 =====
                         has_subject = any(s in title for s in SUBJECTS)
                         has_area = any(a in title for a in AREAS)
                         if not (has_subject and has_area):
@@ -339,7 +321,6 @@ def fetch_news():
                             continue
                         existing_keys.add(key)
                         
-                        # ===== 进入详情页抓取摘要（30字以内） =====
                         summary = fetch_article_summary(full_link, session, timeout=10)
                         if not summary:
                             summary = ''
@@ -350,6 +331,7 @@ def fetch_news():
                         news_type = detect_type(title)
                         keywords = extract_keywords(title)
                         
+                        # ===== 追加到现有数据中 =====
                         all_news.append({
                             "日期": publish_date,
                             "标题": title,
@@ -377,8 +359,10 @@ def fetch_news():
         
         time.sleep(random.uniform(1.5, 3.0))
     
+    # 按日期排序（新在前）
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
+    # 保存
     with open('news_data.json', 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
     
