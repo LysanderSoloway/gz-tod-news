@@ -10,13 +10,22 @@ import re
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# ============================================================
+# 关键词配置
+# ============================================================
 SUBJECTS = ['国铁', '铁路', '城际', '地铁']
 AREAS = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
 
+# ============================================================
+# 媒体域名 → 显示名称映射（国内外全覆盖）
+# ============================================================
 MEDIA_MAP = {
+    # === 中央媒体 ===
     'people.com.cn': '人民网', 'xinhuanet.com': '新华网', 'gmw.cn': '光明网',
     'cnr.cn': '央广网', 'cctv.com': '央视网', 'china.com.cn': '中国网',
     'zgjtb.com': '中国交通报', 'peoplerail.com': '人民铁道报',
+    'cmg.com': '中央广播电视总台',
+    # === 地方媒体 ===
     'bjnews.com.cn': '新京报', 'thepaper.cn': '澎湃新闻',
     'yicai.com': '第一财经', 'leju.com': '乐居财经',
     'sohu.com': '搜狐新闻', '163.com': '网易新闻', 'sina.com.cn': '新浪新闻',
@@ -24,12 +33,14 @@ MEDIA_MAP = {
     'jiemian.com': '界面新闻', 'caixin.com': '财新网',
     '21jingji.com': '21世纪经济报道', 'nbd.com.cn': '每日经济新闻',
     'stcn.com': '证券时报', 'eastmoney.com': '东方财富', 'hexun.com': '和讯网',
+    # === 广东省及广州市 ===
     'gz.gov.cn': '广州市政府网', 'gd.gov.cn': '广东省政府网',
     'gzmtr.com': '广州地铁官网', 'szmc.net': '深圳地铁官网',
     'sznews.com': '深圳新闻网', 'dayoo.com': '广州日报大洋网',
     'nfnews.com': '南方日报', 'oeeee.com': '南方都市报',
     'ycwb.com': '羊城晚报', 'gz-cmc.com': '广州日报新花城',
-    'conghua.gov.cn': '从化区政府网',
+    'conghua.gov.cn': '从化区政府网', 'gdjt.gov.cn': '广东省交通厅',
+    # === 其他城市 ===
     'bj.gov.cn': '北京市政府网', 'beijing.gov.cn': '北京市政府网',
     'bjd.com.cn': '北京日报', 'ynet.com': '北京青年报',
     'tj.gov.cn': '天津政务网', 'sh.gov.cn': '上海市政府网',
@@ -47,21 +58,37 @@ MEDIA_MAP = {
     'nj.gov.cn': '南京市政府网', 'hebei.gov.cn': '河北省政府网',
     'hebnews.cn': '河北新闻网', 'cnjiwang.com': '中国吉林网',
     'jlnews.cn': '吉林日报', 'hljnews.cn': '黑龙江日报',
+    # === 行业网站 ===
     'chinatod.com.cn': '中国TOD网', 'rail-transit.com': '中国轨道交通网',
     'chinametro.net': '中国城市轨道交通网', 'camet.org.cn': '中国城市轨道交通协会',
     'rail.ally.net.cn': '世界轨道交通资讯网', 'rt-media.cn': 'RT轨道交通',
     'railworld.com.cn': '轨道世界', 'gaotie.cn': '高铁网',
+    # === 国际铁路媒体 ===
     'railjournal.com': 'International Railway Journal',
-    'railwaygazette.com': 'Railway Gazette', 'uitp.org': 'UITP',
-    'tfl.gov.uk': '伦敦交通局', 'lta.gov.sg': '新加坡LTA',
-    'db.de': '德国铁路DB', 'jr-east.co.jp': 'JR东日本',
-    'fra.dot.gov': '美国联邦铁路管理局', 'europa.eu': '欧盟委员会',
+    'railwaygazette.com': 'Railway Gazette',
+    'railwayage.com': 'Railway Age',
+    'railexpress.com.au': 'Rail Express',
+    'railfreight.com': 'RailFreight',
+    'globalrailwayreview.com': 'Global Railway Review',
+    'uic.org': 'UIC国际铁路联盟',
+    'railtech.com': 'RailTech',
+    'railwaypro.com': 'Railway PRO',
+    'rollingstockworld.com': 'Rolling Stock World',
+    # === 国际媒体 ===
+    'reuters.com': 'Reuters', 'bbc.com': 'BBC', 'cnn.com': 'CNN',
+    'nytimes.com': 'New York Times', 'wsj.com': 'Wall Street Journal',
+    'ft.com': 'Financial Times', 'bloomberg.com': 'Bloomberg',
+    'apnews.com': 'AP News', 'theguardian.com': 'The Guardian',
+    # === 门户/搜索引擎（兜底） ===
     'baidu.com': '百度新闻', 'sogou.com': '搜狗新闻', 'so.com': '360新闻',
     'toutiao.com': '今日头条', 'news.qq.com': '腾讯新闻',
     'news.163.com': '网易新闻', 'news.sina.com.cn': '新浪新闻',
     'news.sohu.com': '搜狐新闻',
 }
 
+# ============================================================
+# 工具函数
+# ============================================================
 def get_media_name(link):
     if not link:
         return None
@@ -114,6 +141,7 @@ def extract_title_and_summary(item, soup):
         return ''
 
 def fetch_article_summary(url, session, timeout=10):
+    """从新闻详情页提取正文前30字"""
     try:
         resp = session.get(url, timeout=timeout)
         if resp.status_code != 200:
@@ -121,9 +149,11 @@ def fetch_article_summary(url, session, timeout=10):
         resp.encoding = 'utf-8'
         soup = BeautifulSoup(resp.text, 'html.parser')
         article_text = ''
+        
         article = soup.find('article')
         if article:
             article_text = article.text.strip()
+        
         if not article_text or len(article_text) < 20:
             content_selectors = [
                 '.content', '.article-content', '.article-text', '.detail-content',
@@ -136,16 +166,18 @@ def fetch_article_summary(url, session, timeout=10):
                 if elem:
                     article_text = elem.text.strip()
                     break
+        
         if not article_text or len(article_text) < 20:
             paragraphs = []
             for p in soup.find_all('p'):
                 text = p.text.strip()
-                if len(text) > 20 and not text.startswith('广告') and not text.startswith('声明') and not text.startswith('原标题'):
+                if len(text) > 20 and not text.startswith('广告') and not text.startswith('声明'):
                     paragraphs.append(text)
                     if len(''.join(paragraphs)) > 50:
                         break
             if paragraphs:
                 article_text = ' '.join(paragraphs)
+        
         if article_text:
             article_text = clean_text(article_text)
             article_text = re.sub(r'（.*?版权.*?）', '', article_text)
@@ -157,6 +189,7 @@ def fetch_article_summary(url, session, timeout=10):
             article_text = re.sub(r'通讯员.*?报道', '', article_text)
             article_text = re.sub(r'【.*?】', '', article_text)
             article_text = article_text.strip()
+            
             if len(article_text) > 30:
                 cut_text = article_text[:35]
                 for punct in ['。', '！', '？', '；', '，']:
@@ -197,13 +230,11 @@ def detect_type(title):
     return "综合"
 
 def extract_keywords(title):
-    subjects = ['国铁', '铁路', '城际', '地铁']
-    areas = ['规划', '城市设计', '建筑', '交通', '产业', '投融资', '招商', '运营', '站城融合', 'TOD', '获奖']
     keywords = []
-    for s in subjects:
+    for s in SUBJECTS:
         if s in title:
             keywords.append(s)
-    for a in areas:
+    for a in AREAS:
         if a in title:
             keywords.append(a)
     return keywords if keywords else ["轨道"]
@@ -221,6 +252,9 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
                 raise e
     return None
 
+# ============================================================
+# 主爬虫函数 - 增量追加，永不覆盖
+# ============================================================
 def fetch_news():
     logging.info("🤖 爬虫启动（增量追加版 - 永不覆盖）")
     
@@ -236,7 +270,7 @@ def fetch_news():
         all_news = []
         logging.warning("⚠️ 数据文件损坏，从零开始")
     
-    # 建立去重索引（用标题+链接）
+    # 建立去重索引（用标题前20字+链接前50字）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
     try:
@@ -311,16 +345,19 @@ def fetch_news():
                         if not title:
                             continue
                         
+                        # 组合过滤：必须同时包含主体词和领域词
                         has_subject = any(s in title for s in SUBJECTS)
                         has_area = any(a in title for a in AREAS)
                         if not (has_subject and has_area):
                             continue
                         
+                        # 去重
                         key = title[:20] + full_link[:50]
                         if key in existing_keys:
                             continue
                         existing_keys.add(key)
                         
+                        # 获取摘要
                         summary = fetch_article_summary(full_link, session, timeout=10)
                         if not summary:
                             summary = ''
