@@ -1,33 +1,25 @@
-name: 每周一自动抓取新闻
+name: 每周自动抓取新闻（增量追加）
 
 on:
   schedule:
-    - cron: '0 1 * * 1'
+    - cron: '0 8 * * 1'
   workflow_dispatch:
 
 jobs:
-  fetch:
+  update:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 安装Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-      
-      - name: 安装工具
-        run: pip install requests beautifulsoup4
-      
-      - name: 运行小机器人
-        run: python news_spider.py
-      
-      - name: 提交新数据
+          python-version: '3.10'
+      - run: pip install requests beautifulsoup4
+      - run: python news_spider.py
+      - name: 提交更新
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # 如果有新增数据才提交，否则不提交
           git add news_data.json
-          git diff --staged --quiet || git commit -m "每周自动更新新闻 $(date +'%Y-%m-%d')"
+          git diff --staged --quiet || git commit -m "🤖 增量追加新闻 $(date +'%Y-%m-%d')"
           git push
