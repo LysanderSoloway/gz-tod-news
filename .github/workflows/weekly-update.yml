@@ -1,25 +1,42 @@
-name: 每周自动抓取新闻（增量追加）
+name: 每周自动抓取新闻（增量追加版）
 
 on:
   schedule:
-    - cron: '0 8 * * 1'
-  workflow_dispatch:
+    - cron: '0 8 * * 1'   # 每周一早上8点（北京时间）
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    # 拉取完整历史，用于判断变更
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: pip install requests beautifulsoup4
-      - run: python news_spider.py
-      - name: 提交更新
+
+      - name: 安装依赖
+        run: pip install requests beautifulsoup4
+
+      - name: 运行爬虫
+        run: python news_spider.py
+
+      - name: 检查是否有变更并提交
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # 如果有新增数据才提交，否则不提交
-          git add news_data.json
-          git diff --staged --quiet || git commit -m "🤖 增量追加新闻 $(date +'%Y-%m-%d')"
-          git push
+          
+          # 使用 GITHUB_TOKEN 认证推送
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # 检查 news_data.json 是否有变更
+          if git diff --quiet news_data.json; then
+            echo "📭 没有新数据，跳过提交"
+          else
+            git add news_data.json
+            git commit -m "🤖 增量追加新闻 $(date +'%Y-%m-%d %H:%M')"
+            git push
+            echo "✅ 已提交新增数据"
+          fi
