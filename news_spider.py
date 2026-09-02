@@ -258,17 +258,18 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
 def fetch_news():
     logging.info("🤖 爬虫启动（增量追加版 - 永不覆盖）")
     
-    # ===== 关键：读取旧数据，新数据追加在后面 =====
+    # ===== 核心：读取现有数据，如果失败则直接返回 =====
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 已有 {len(all_news)} 条数据，新数据将追加在后面")
+        logging.info(f"📚 成功读取现有数据 {len(all_news)} 条")
     except FileNotFoundError:
         all_news = []
-        logging.info("📚 从零开始")
+        logging.info("📚 没有旧数据，从零开始")
     except json.JSONDecodeError:
-        all_news = []
-        logging.warning("⚠️ 数据文件损坏，从零开始")
+        # 如果 JSON 格式错误，不要覆盖！先报错退出
+        logging.error("❌ news_data.json 格式错误，请手动修复！")
+        return  # 直接退出，不执行任何操作
     
     # 建立去重索引（用标题前20字+链接前50字）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
