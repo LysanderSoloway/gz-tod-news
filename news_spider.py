@@ -7,6 +7,8 @@ from datetime import datetime
 from urllib.parse import urljoin, urlparse
 import logging
 import re
+import shutil
+import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -253,23 +255,31 @@ def fetch_with_retry(url, headers, timeout=20, retries=2):
     return None
 
 # ============================================================
-# 主爬虫函数 - 增量追加，永不覆盖
+# 主爬虫函数 - 增量追加，永不覆盖（增强容错）
 # ============================================================
 def fetch_news():
-    logging.info("🤖 爬虫启动（增量追加版 - 永不覆盖）")
+    logging.info("🤖 爬虫启动（增量追加版 - 增强容错）")
     
-    # ===== 核心：读取现有数据，如果失败则直接返回 =====
+    # ===== 核心：读取现有数据，如果损坏则重建 =====
+    all_news = []
+    data_file = 'news_data.json'
+    backup_file = 'news_data.json.bak'
+    
     try:
-        with open('news_data.json', 'r', encoding='utf-8') as f:
+        with open(data_file, 'r', encoding='utf-8') as f:
             all_news = json.load(f)
         logging.info(f"📚 成功读取现有数据 {len(all_news)} 条")
     except FileNotFoundError:
         all_news = []
         logging.info("📚 没有旧数据，从零开始")
-    except json.JSONDecodeError:
-        # 如果 JSON 格式错误，不要覆盖！先报错退出
-        logging.error("❌ news_data.json 格式错误，请手动修复！")
-        return  # 直接退出，不执行任何操作
+    except json.JSONDecodeError as e:
+        # JSON 格式错误 -> 备份并重置
+        logging.error(f"❌ JSON 解析失败: {e}")
+        if os.path.exists(data_file):
+            shutil.copy2(data_file, backup_file)
+            logging.info(f"📦 已备份损坏文件至 {backup_file}")
+        all_news = []
+        logging.info("📚 已重置数据列表，将重新开始抓取")
     
     # 建立去重索引（用标题前20字+链接前50字）
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
@@ -400,8 +410,8 @@ def fetch_news():
     # 按日期排序（新在前）
     all_news.sort(key=lambda x: x["日期"], reverse=True)
     
-    # 保存
-    with open('news_data.json', 'w', encoding='utf-8') as f:
+    # 保存（保证格式合法）
+    with open(data_file, 'w', encoding='utf-8') as f:
         json.dump(all_news, f, ensure_ascii=False, indent=2)
     
     logging.info(f"🎉 完成！新增 {new_count} 条，共 {len(all_news)} 条")
