@@ -2215,24 +2215,31 @@
 
         window.onload = function() {
             fetch('news_data.json?_=' + Date.now())
-                .then(response => {
-                    if (!response.ok) throw new Error('数据文件不存在，请先去 Actions 手动运行一次爬虫');
-                    return response.json();
-                })
-                .then(data => {
-                    renderNews(data);
-                    generateStats(data);
-                    generateCharts(data);
-                    generateQuarterlySummary(data);
-                })
-                .catch(error => {
-                    console.error('加载失败:', error);
-                    document.getElementById('newsTable').innerHTML =
-                        '<tr><td colspan="7" class="error-msg">⚠️ 暂时没有数据，请先去 Actions 页面手动运行一次 "每周一自动抓取新闻"</td></tr>';
-                    document.getElementById('lastUpdate').textContent = '暂无数据';
-                    document.getElementById('countTip').textContent = '共 0 条';
-                    updatePagination(0);
-                });
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        renderNews(data);
+        generateStats(data);
+        generateCharts(data);
+        generateQuarterlySummary(data);
+    })
+    .catch(error => {
+        console.error('加载失败:', error);
+        let errorMsg = error.message;
+        // 如果错误包含 JSON 解析错误，提示更明确
+        if (errorMsg.includes('Unexpected token') || errorMsg.includes('JSON')) {
+            errorMsg = '数据文件格式损坏（JSON 解析失败），请检查 news_data.json 是否合法。';
+        }
+        document.getElementById('newsTable').innerHTML =
+            `<tr><td colspan="7" class="error-msg">⚠️ 数据加载失败：${errorMsg}</td></tr>`;
+        document.getElementById('lastUpdate').textContent = '暂无数据';
+        document.getElementById('countTip').textContent = '共 0 条';
+        updatePagination(0);
+    });
         };
     </script>
 </body>
