@@ -9,42 +9,48 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# ===== 关键词过滤（和原来一样） =====
+# ===== 关键词过滤 =====
 KEYWORD_FILTERS = ['TOD', '综合开发', '枢纽', '城际', '地铁', '轨道', '铁路', '站城', '高铁', '轨道交通', '上盖', '国铁']
 
-# ===== 只改这里：从 sources.json 读取数据源 =====
+# ===== 从 sources.json 读取数据源 =====
 def load_sources():
     try:
         with open('sources.json', 'r', encoding='utf-8') as f:
             return json.load(f)
-    except:
-        # 如果读不了，用默认的几个
+    except Exception as e:
+        logging.error(f"读取 sources.json 失败: {e}")
+        # 默认使用几个基本数据源
         return [
             {"name": "百度新闻", "url": "https://news.baidu.com/s?tn=news&word=TOD", "select": "div.result a", "limit": 15, "pages": 1},
             {"name": "360新闻", "url": "https://news.so.com/ns?q=%E5%9C%B0%E9%93%81%20TOD", "select": "li.res-list a", "limit": 12, "pages": 1},
         ]
 
 def fetch_news():
-    logging.info("🤖 爬虫启动")
+    logging.info("🤖 爬虫启动（无摘要版）")
     
-    # ===== 读取旧数据（和原来一样） =====
+    # ===== 读取旧数据 =====
     try:
         with open('news_data.json', 'r', encoding='utf-8') as f:
             all_news = json.load(f)
-        logging.info(f"📚 已有 {len(all_news)} 条数据")
-    except:
+        logging.info(f"📚 成功读取 {len(all_news)} 条历史数据")
+    except FileNotFoundError:
         all_news = []
-        logging.info("📚 从零开始")
+        logging.info("📚 没有历史数据，从零开始")
+    except json.JSONDecodeError:
+        logging.error("❌ news_data.json 格式错误，请手动修复！")
+        return
     
     existing_keys = {item["标题"][:20] + item.get("链接", "")[:50] for item in all_news}
     
-    # ===== 读取数据源（唯一改动的地方） =====
+    # ===== 加载数据源 =====
     sources = load_sources()
     logging.info(f"📡 加载 {len(sources)} 个数据源")
     
     new_count = 0
     session = requests.Session()
-    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    })
     
     for src in sources:
         name = src.get('name', '未知')
@@ -53,20 +59,32 @@ def fetch_news():
         limit = src.get('limit', 10)
         pages = src.get('pages', 1)
         
+        if not base_url:
+            continue
+        
         logging.info(f"🔍 抓取: {name}")
         
         for page in range(1, pages + 1):
-            page_url = base_url if page == 1 else base_url + f'&page={page}'
+            # 处理分页参数（简单拼接）
+            if page == 1:
+                page_url = base_url
+            else:
+                if '?' in base_url:
+                    page_url = base_url + f'&page={page}'
+                else:
+                    page_url = base_url + f'?page={page}'
             
             try:
                 resp = session.get(page_url, timeout=15)
                 if resp.status_code != 200:
+                    logging.warning(f"⚠️ {name} 第 {page} 页状态码 {resp.status_code}")
                     continue
                 
                 soup = BeautifulSoup(resp.text, 'html.parser')
                 items = soup.select(selector)
                 
                 if not items:
+                    logging.warning(f"⚠️ {name} 第 {page} 页无匹配元素")
                     continue
                 
                 count = 0
@@ -92,7 +110,7 @@ def fetch_news():
                         scope = "全国"
                         if "广州" in title:
                             scope = "广州市"
-                        elif any(w in title for w in ["广东", "深圳", "佛山", "东莞"]):
+                        elif any(w in title for w in ["广东", "深圳", "佛山", "东莞", "珠海", "中山", "汕头"]):
                             scope = "广东省"
                         
                         # 类型判断
@@ -135,13 +153,13 @@ def fetch_news():
                             "来源": name,
                             "范围": scope,
                             "关键词": keywords,
-                            "摘要": title[:80],
                             "类型": news_type
                         })
                         count += 1
                         new_count += 1
                         time.sleep(random.uniform(0.2, 0.5))
-                    except:
+                    except Exception as e:
+                        logging.debug(f"处理条目失败: {e}")
                         continue
                 
                 logging.info(f"✅ {name} 第 {page} 页新增 {count} 条")
