@@ -8,8 +8,12 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # ⚠️ 核心：给官方默认 Token 赋予写入权限
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -21,22 +25,18 @@ jobs:
       - name: 运行爬虫
         run: python news_spider.py
 
-      - name: 检查并提交（只有文件变大才提交）
+      - name: 检查并提交
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           
-          OLD_LINES=$(git show HEAD:news_data.json 2>/dev/null | wc -l || echo "0")
-          NEW_LINES=$(cat news_data.json 2>/dev/null | wc -l || echo "0")
-          
-          if [ "$NEW_LINES" -le "$OLD_LINES" ]; then
-            echo "📭 文件没有变大，无新增数据，跳过提交"
-            git checkout -- news_data.json
+          # 判断是否有变化
+          if git diff --quiet news_data.json; then
+            echo "📭 无新数据，跳过提交"
             exit 0
           fi
           
           git add news_data.json
           git commit -m "🤖 增量追加新闻 $(date +'%Y-%m-%d')"
           git push
-          echo "✅ 已提交新增数据"
+          echo "✅ 已提交"
